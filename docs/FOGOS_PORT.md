@@ -14,6 +14,18 @@ home screen comes much later: it also needs working storage, display, touch,
 and a compatible iOS root image. The existing `sweet` root image and ADT are
 not fogos artifacts.
 
+## XNU build target (2026-11-01)
+
+Added an initial `FOGOS` machine configuration for XNU `8796.141.3`, matching
+the existing macOS 13.5 CI build. It sets an ARMv8.2-A+crypto, plain `arm64`
+compile target and registers the Qualcomm Cortex-A cache-line size. The common
+source-staging scripts now run for `FOGOS` so CI can apply the existing patch
+stack. This is a **compile-only scaffold**: it does not enable `SWEET` hardware
+code and does not implement a Fogos platform expert, CPU startup, PSCI/GIC,
+display, touch, UFS, or boot path. No `FOGOS` kernel has been compiled yet.
+Next: run GitHub Actions with `machine_config=FOGOS`, then use compiler errors
+to close the build gaps before adding board bring-up code.
+
 ## Hardware evidence collected
 
 The connected phone's ColorOS 16 build reports OPPO product properties, but

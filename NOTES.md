@@ -12,13 +12,22 @@ slot `_a`, `verifiedbootstate=orange`, `flash.locked=0`,
 permissions, so the local pull yielded no tree. Use the already extracted
 official firmware DTB/DTBO instead. No reboot, unlock, flash, or erase was done.
 
+XNU milestone: added `xnu/patches/0082-fogos-machine-config.patch` for an
+initial `FOGOS` compile target (plain ARM64, ARMv8.2-A+crypto) and allowed the
+existing staged-source scripts to run for FOGOS so the patch stack can apply.
+This is compile-only: no Fogos platform expert, CPU startup, PSCI/GIC, display,
+touch, UFS or boot path is present. The patch applies cleanly to locally
+patched XNU `8796.141.3` through patch 0030. Full patch-stack CI build is still
+pending; there is no build or boot result yet. Next: commit and dispatch
+`xnu.yml` with `machine_config=FOGOS`, then resolve compile errors.
+
 User wants the linked ios-sweet XNU/iOS project ported to the Moto G34. The
 phone was previously observed running a ColorOS 16 port which spoofed its
 Android product identity as OPPO PLE110; its live tree and boot arguments
 identified the underlying hardware as Moto G34 `XT2363-1`, `fogos` / Qualcomm
-`blair`. User now reports stock is installed, but ADB is not currently
-connected, so exact installed build remains unverified. Stock firmware supplied
-locally: Android 15, `V1UGS35H.75-14-8-1-2`.
+`blair`. ADB now confirms stock Android 15 build `V1UGS35H.75-14-8-1-2`; the
+live tree is denied to the unprivileged Android shell. The local stock package
+matches this build.
 
 Read-only bring-up evidence: 8 cores (six Cortex-A55 MIDR `0xd05`, two
 Cortex-A78 MIDR `0xd41`); live panel `qcom,mdss_dsi_txd_ili9883c_6528_hd_plus_120_video`,
