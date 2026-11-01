@@ -1,5 +1,20 @@
 # iOS 16 on sweet (Redmi Note 10 Pro, SM7150) - working notes
 
+## New request: Moto G34 5G (`fogos`)
+
+User asked to port ios-sweet to their Moto G34 5G. This is a separate board
+port, not a reusable `sweet` image: public sources identify fogos as SM6375 /
+Snapdragon 695, while this repo targets sweet / SM7150 / Snapdragon 732G.
+See `docs/FOGOS_PORT.md` for a grounded first-pass plan and required inputs.
+
+At this milestone no target-specific kernel changes or image were built. The
+current workspace is a fresh public source checkout; `adb` and `fastboot` are
+not installed here and no phone is connected. Next, get the exact XT2363
+variant/build and a matching stock `boot.img` + `dtbo.img` (or firmware package)
+from the user. Do not put calibration dumps in git. Keep the first bring-up
+temporary (`fastboot boot`) and storage read-only; obtain separate confirmation
+before any userdata erase or partition write.
+
 ## Agent handoff / active work (2026-10-15, latest)
 
 ### >>> UPDATE 2026-10-18 (read first, then the 10-17 handoff below) <<<
