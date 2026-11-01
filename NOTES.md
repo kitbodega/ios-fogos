@@ -21,6 +21,20 @@ The matching XBL UEFI dump is at `C:\Users\Admin\Downloads\uefi\firmware-dumps`;
 its `uefiplat.cfg` gives UFS regs `0x04800000`, MDSS `0x05e00000`, GICD
 `0x0f200000`, GICR `0x0f240000`, SPMI `0x01c00000`.
 
+Live FDT memory ranges are `0x80000000+0x3bb00000`,
+`0xc0000000+0xc0000000`, `0x180000000+0x100000000`, plus explicit reserved
+regions. CPU nodes use `enable-method=psci`; FDT compatible is `arm,gic-v3`.
+PSCI conduit and full RAM/reserved-region reconciliation remain open. A
+read-only tree export of `/soc` is at `dtb/fogos-live-soc/`; vendor tree and
+firmware are at `dtb/fogos-stock-v1ugs35h-75-14-8-1-2.dtb` and
+`dtb/fogos-stock-v1ugs35h-75-14-8-1-2-overlays/`.
+
+Public reference tree cloned locally (ignored): `research/fogos_device` at
+`dab64e1`; confirms boot header v3, `holi` target, and the fogos source layout.
+An attempted sparse checkout of `android_kernel_motorola_sm6375` could not be
+checked out on Windows due to Linux's reserved filename `drivers/gpu/drm/nouveau/nvkm/subdev/i2c/aux.c`;
+no kernel source from that checkout has been used.
+
 New reusable extractors: `tools/unpack_vendor_boot.py` and `tools/unpack_dtbo.py`.
 Both were run against the supplied firmware. `boot.img` header v3, vendor_boot
 header v3 (DTB at file offset `0xb4000`, size `323929`), DTBO has two entries.
