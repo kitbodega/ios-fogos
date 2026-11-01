@@ -110,7 +110,10 @@ is `arm,gic-v3` with GICD `0x0f200000`+`0x10000` and GICR
 uses is PPI 3 = INTID 19. The 1 MiB GICR window is exactly 8 redistributors x
 `0x20000`, which reconciles the XBL config's per-frame size with the FDT
 window. `/soc/psci` is `arm,psci-1.0` with `method = smc`: the conduit is SMC,
-not HVC. `tools/fogos-dtb-facts.py` prints these facts from the shipped DTB.
+not HVC. `tools/fogos-dtb-facts.py` prints these facts from the shipped DTB and accepts
+wildcard overlay paths (for example, `python tools/fogos-dtb-facts.py <DTB>
+'<overlay-dir>/*.dtbo'`). It decodes `reg` using the parent node's address and
+size-cell counts.
 
 The supplied CFC package is at
 `C:\ProgramData\RSA\Download\RomFiles\FOGOS_G_V1UGS35H.75_14_8_1_2_subsidy_DEFAULT_regulatory_DEFAULT_cid50_CFC.xml`.
@@ -123,21 +126,21 @@ The matching XBL `uefiplat.cfg` dump lists UFS registers at `0x04800000`,
 MDSS at `0x05e00000`, GICD at `0x0f200000`, GICR at `0x0f240000`, and the
 Qualcomm SPMI arbiter at `0x01c00000`. The live FDT's UFS node begins at
 `0x04804000` and has three register ranges (`0x04804000+0x3000`,
-`0x04808000+0x8000`, `0x04810000+0x9000`). The XBL config lists a 128 KiB GICR
-region while the live tree lists 1 MiB; reconcile this before using the XBL
-memory map to initialize XNU.
+`0x04808000+0x8000`, `0x04810000+0x9000`). The XBL config's 128 KiB GICR size is per redistributor frame; eight frames
+account for the 1 MiB GICR window in the DTB. This address-size discrepancy is
+resolved. Full RAM/reserved-region reconciliation remains open.
 
-ADB exposes inconsistent boot-lock properties (`flash.locked=1`,
-`vbmeta.device_state=locked`, while `verifiedbootstate=orange`), so the actual
-bootloader state is unconfirmed. No reboot, unlock, flash, or erase was done.
+ADB reports `flash.locked=0`, `vbmeta.device_state=unlocked`, and
+`verifiedbootstate=orange`. Fastboot has not yet been entered, and no reboot,
+unlock, flash, or erase was performed.
 The firmware's `flashfile.xml` contains partition flashing and userdata erase
 steps; that script was only read and must not be run for this bring-up.
 
 ## Remaining hardware and engineering work
 
-- SoC, CPU topology, interrupt controller setup, PSCI behavior, memory map,
-  and reserved carve-outs must be reconciled between the live FDT, vendor DTB,
-  DTBO selection, and XBL memory map.
+- CPU topology, interrupt-controller setup, SMC-based PSCI calls, memory map,
+  and reserved carve-outs still need XNU implementation or reconciliation
+  between the stock DTB/DTBO and XBL map.
 - The active panel and touch-controller identities are known, but XNU still
   needs a fogos framebuffer/display path, touch input path, and correct power
   sequencing. The existing Goodix/GENI, SPMI and framebuffer drivers assume

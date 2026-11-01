@@ -10,6 +10,8 @@ the notes. Read-only; prints nothing device-specific beyond addresses.
 """
 import struct
 import sys
+import glob
+from pathlib import Path
 
 
 def parse(dtb):
@@ -27,7 +29,10 @@ def parse(dtb):
             end = dtb.index(b'\0', pos)
             name = dtb[pos:end].decode(errors='replace')
             pos = (end + 4) & ~3
-            node = {'name': name, 'path': '/' + '/'.join([n['name'] for n in stack] + ([name] if name else [])), 'props': {}}
+            parts = [n['name'] for n in stack] + ([name] if name else [])
+            path = '/' + '/'.join(part for part in parts if part)
+            node = {'name': name, 'path': path or '/', 'props': {},
+                    'parent': stack[-1] if stack else None}
             if stack:
                 stack[-1].setdefault('children', []).append(node)
             nodes.append(node)
@@ -58,6 +63,30 @@ def u64(s):
     return ' '.join(hex(x) for x in struct.unpack('>%dQ' % (len(s) // 8), s))
 
 
+def reg_cells(node, raw):
+    parent = node.get('parent') or {}
+    props = parent.get('props', {})
+    address_cells = int.from_bytes(props.get('#address-cells', b'\0\0\0\2'), 'big')
+    size_cells = int.from_bytes(props.get('#size-cells', b'\0\0\0\1'), 'big')
+    cells = struct.unpack('>%dI' % (len(raw) // 4), raw)
+    stride = address_cells + size_cells
+    if not stride or len(cells) % stride:
+        return 'cells=' + u32(raw)
+
+    def value(items):
+        result = 0
+        for item in items:
+            result = (result << 32) | item
+        return result
+
+    entries = []
+    for i in range(0, len(cells), stride):
+        address = value(cells[i:i + address_cells])
+        size = value(cells[i + address_cells:i + stride])
+        entries.append(f'{address:#x}+{size:#x}' if size_cells else f'{address:#x}')
+    return ', '.join(entries)
+
+
 def strings_of(raw):
     return [p.decode(errors='replace') for p in raw.split(b'\0') if p]
 
@@ -74,7 +103,9 @@ def show(nodes, want, label):
                         print(f'    {k} = {strings_of(v)}')
                     elif k == 'clock-frequency':
                         print(f'    {k} = {u32(v)}')
-                    elif k in ('reg', 'cpu_on'):
+                    elif k == 'reg':
+                        print(f'    {k} = {reg_cells(n, v)}')
+                    elif k == 'cpu_on':
                         print(f'    {k} = {u64(v) if len(v) % 8 == 0 else u32(v)}')
                     elif k == 'interrupts':
                         print(f'    {k} = {u32(v)}')
@@ -86,9 +117,13 @@ def show(nodes, want, label):
 def main():
     if len(sys.argv) < 2:
         sys.exit(__doc__)
-    for path in sys.argv[1:]:
+    paths = []
+    for arg in sys.argv[1:]:
+        matches = glob.glob(arg)
+        paths.extend(matches or [arg])
+    for path in paths:
         nodes = parse(open(path, 'rb').read())
-        label = path.rsplit('/', 1)[-1]
+        label = Path(path).name
         show(nodes, lambda n: 'arm,gic-v3' in strings_of(n['props'].get('compatible', b'')), label + ': GICv3')
         show(nodes, lambda n: 'arm,armv8-timer' in strings_of(n['props'].get('compatible', b'')), label + ': timer')
         show(nodes, lambda n: n['props'].get('method'), label + ': PSCI')

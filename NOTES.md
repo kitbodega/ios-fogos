@@ -120,8 +120,8 @@ regions. CPU nodes use `enable-method=psci`, MPIDRs 0x0, 0x100, ..., 0x700;
 FDT compatible is `arm,gic-v3`, GICD is 0x0f200000+0x10000, GICR is
 0x0f240000+0x100000, and virtual timer is PPI3 / INTID 19. UFS node has three
 register ranges starting 0x04804000. The XBL config's GICR frame size of 0x20000
-and the live FDT's 0x100000 window are the same thing: 8 redistributors x
-0x20000. PSCI is `arm,psci-1.0` with `method = smc` (SMC, not HVC). Full
+and the DTB's 0x100000 window reconcile as 8 redistributors x 0x20000. PSCI is
+`arm,psci-1.0` with `method = smc`; XNU still needs the SMC call path. Full
 RAM/reserved-region reconciliation remains open. A read-only tree export of
 `/soc` is at
 `dtb/fogos-live-soc/`; vendor tree and
