@@ -81,14 +81,31 @@ jobs:
         run: |
           # Generated headers, config option headers, mig output and the patched
           # source: enough to re-run any single compile command from the log locally.
+          # On macos-15 the macOS SDK no longer carries the Kernel.framework
+          # private platform headers: they come from the KDK instead.
           SDK=$(xcrun --sdk macosx --show-sdk-path)
           mkdir -p sdk-kernel-platform
-          cp -R "$SDK/System/Library/Frameworks/Kernel.framework/Versions/A/PrivateHeaders/platform" sdk-kernel-platform/ || true
-          tar czf buildtree.tgz \
+          for hdr in \
+              "$SDK/System/Library/Frameworks/Kernel.framework/Versions/A/PrivateHeaders/platform" \
+              /Library/Developer/KDKs/*/System/Library/Frameworks/Kernel.framework/Versions/A/PrivateHeaders/platform; do
+            if [ -d "$hdr" ]; then
+              cp -R "$hdr"/. sdk-kernel-platform/
+              echo "platform headers from $hdr"
+              break
+            fi
+          done
+          ls sdk-kernel-platform | head
+          # A failed build may not have created the object tree yet: package
+          # whatever exists so a partial run still gives useful output.
+          cp -R sdk-kernel-platform dxb/
+          paths=""
+          for p in build/xnu.obj build/xnu-hdrs.obj fakeroot/usr/local/include xnu sdk-kernel-platform; do
+            [ -e "dxb/$p" ] && paths="$paths $p" || true
+          done
+          (cd dxb && tar czf ../buildtree.tgz \
             --exclude='*.o' --exclude='*.cpo' --exclude='*.a' --exclude='*.dSYM' --exclude='*.unstripped' \
             --exclude='kernel.development.*' --exclude='.git' \
-            -C dxb build/xnu.obj fakeroot/usr/local/include xnu \
-            -C .. sdk-kernel-platform
+            $paths) || echo "tar reported problems"
           ls -la buildtree.tgz
 
       - uses: actions/upload-artifact@v4

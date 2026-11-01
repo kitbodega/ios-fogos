@@ -61,6 +61,210 @@ index 777aca4..145d3e9 100644
  
  #if (!CONFIG_KERNEL_INTEGRITY || (CONFIG_KERNEL_INTEGRITY && !defined(KERNEL_INTEGRITY_WT)))
  	/* Watchtower
+diff --git a/pexpert/arm/pe_fiq.c b/pexpert/arm/pe_fiq.c
+--- a/pexpert/arm/pe_fiq.c
++++ b/pexpert/arm/pe_fiq.c
+@@ -17,10 +17,23 @@
+ #define GICR_WAKE_TIMEOUT_NS (1000000000ULL) // timeout for redistributor wakeup (default 1s)
+ MACHINE_TIMEOUT(gicr_wake_timeout_ns, "gicr-wake-timeout", GICR_WAKE_TIMEOUT_NS, MACHINE_TIMEOUT_UNIT_NSEC, NULL);
+ 
++#if defined(SWEET) || defined(FOGOS)
++/*
++ * Phone default; QEMU virt wires the architected virtual timer to INTID 27
++ * and keeps the generic path below.
++ */
+ #if defined(SWEET)
+-/* Phone default; QEMU virt wires the architected virtual timer to INTID 27. */
+-SECURITY_READ_ONLY_LATE(uint32_t) sweet_vtimer_intid = SWEET_VTIMER_INTID;
++#define BOARD_VTIMER_INTID SWEET_VTIMER_INTID
++#define BOARD_IPI_SGI      SWEET_IPI_SGI
++#define BOARD_GIC_NAME     "SWEET"
++#else /* FOGOS */
++#define BOARD_VTIMER_INTID FOGOS_VTIMER_INTID
++#define BOARD_IPI_SGI      FOGOS_IPI_SGI
++#define BOARD_GIC_NAME     "FOGOS"
+ #endif
++
++SECURITY_READ_ONLY_LATE(uint32_t) board_vtimer_intid = BOARD_VTIMER_INTID;
++#endif /* SWEET || FOGOS */
+ 
+ static vm_offset_t gicd_base;
+ static vm_offset_t gicr_base;
+@@ -102,7 +115,7 @@
+ 			panic("%s: incorrect reg property size in GIC DT node; expecting 32 bytes but got %u bytes", __func__, prop_size);
+ 		}
+ 
+-#if defined(SWEET)
++#if defined(SWEET) || defined(FOGOS)
+ 		/* Read only on the boot CPU, before the GIC and RO-late lockdown. */
+ 		void const *timer_prop;
+ 		unsigned int timer_size;
+@@ -114,9 +127,9 @@
+ 			if (intid < 16 || intid >= 32) {
+ 				panic("%s: virtual timer INTID %u is not a PPI", __func__, intid);
+ 			}
+-			sweet_vtimer_intid = intid;
+-		}
+-		kprintf("SWEET GIC: virtual timer INTID %u\n", sweet_vtimer_intid);
++			board_vtimer_intid = intid;
++		}
++		kprintf(BOARD_GIC_NAME " GIC: virtual timer INTID %u\n", board_vtimer_intid);
+ #endif
+ 
+ 		vm_offset_t soc_base_phys = pe_arm_get_soc_base_phys();
+@@ -164,7 +177,7 @@
+ 		}
+ 	}
+ 
+-#if defined(SWEET)
++#if defined(SWEET) || defined(FOGOS)
+ 	/*
+ 	 * Real hardware with two security states: Group 0 is TrustZone's and
+ 	 * non-secure writes to it are ignored. Everything we own is Group 1 NS
+@@ -175,14 +188,14 @@
+ 	for (unsigned int i = 0; i < 32; i += 4) {
+ 		gicr_write32(GICR_IPRIORITYR0 + i, 0xA0A0A0A0);
+ 	}
+-	gicr_write32(GICR_ISENABLER0, (1U << sweet_vtimer_intid) | (1U << SWEET_IPI_SGI));
++	gicr_write32(GICR_ISENABLER0, (1U << board_vtimer_intid) | (1U << BOARD_IPI_SGI));
+ #else
+ 	// Configure timers and legacy FIQ to be group 0
+ 	gicr_write32(GICR_IGROUPR0, 0x81FFFFFF);
+ 
+ 	// Enable PPI 27
+ 	gicr_write32(GICR_ISENABLER0, (1 << 27));
+-#endif /* SWEET */
++#endif /* SWEET || FOGOS */
+ 
+ 	// Enable system register access
+ 	uint64_t icc_sre = __builtin_arm_rsr64("ICC_SRE_EL1");
+@@ -190,12 +203,12 @@
+ 	__builtin_arm_wsr64("ICC_SRE_EL1", icc_sre);
+ 	__builtin_arm_isb(ISB_SY);
+ 
+-#if defined(SWEET)
++#if defined(SWEET) || defined(FOGOS)
+ 	__builtin_arm_wsr64("ICC_BPR1_EL1", 0);
+ #else
+ 	// Set priority masks and binary point for group 0
+ 	__builtin_arm_wsr64("ICC_BPR0_EL1", 0);
+-#endif /* SWEET */
++#endif /* SWEET || FOGOS */
+ 	__builtin_arm_wsr64("ICC_PMR_EL1", 0xFF);
+ 
+ 	// Set EOI mode of this processor
+@@ -203,7 +216,7 @@
+ 	icc_ctlr &= ~ICC_CTLR_EOIMODE;
+ 	__builtin_arm_wsr64("ICC_CTLR_EL1", icc_ctlr);
+ 
+-#if defined(SWEET)
++#if defined(SWEET) || defined(FOGOS)
+ 	// ABL leaves only ARE_NS set; Linux writes ARE_NS | EnableGrp1A | EnableGrp1
+ 	uint32_t gicd_ctlr = gicd_read32(GICD_CTLR);
+ 	gicd_ctlr |= GICD_CTLR_ARE_NS | GICD_CTLR_ENABLEGRP1A | GICD_CTLR_ENABLEGRP1;
+@@ -220,7 +233,7 @@
+ 	gicd_write32(GICD_CTLR, gicd_ctlr);
+ 	__builtin_arm_wsr64("ICC_IGRPEN0_EL1", 1);
+ 	__builtin_arm_isb(ISB_SY);
+-#endif /* SWEET */
++#endif /* SWEET || FOGOS */
+ }
+ #else
+ void
+diff --git a/pexpert/pexpert/arm64/FOGOS.h b/pexpert/pexpert/arm64/FOGOS.h
+new file mode 100644
+index 000000000..63cf2eb98
+--- /dev/null
++++ b/pexpert/pexpert/arm64/FOGOS.h
+@@ -0,0 +1,87 @@
++/*
++ * Board config for the Moto G34 5G ("fogos", Qualcomm SM6375 "blair"):
++ * Kryo 660 = 2x Cortex-A78 + 6x Cortex-A55, ARMv8.2-A, no PAC.
++ *
++ * Generic ARM like BCM2837 (no APPLE_ARM64_ARCH_FAMILY: none of Apple's
++ * implementation-defined system registers exist), 16K pages and GICv3 like
++ * VMAPPLE. Unlike VMAPPLE the GIC has two security states (GICD_TYPER
++ * SecurityExtn=1): Group 0 belongs to TrustZone, so every interrupt,
++ * including the timer, is a Group 1 IRQ taken through sleh_irq().
++ *
++ * Values are taken from the stock vendor_boot DTB / DTBO and the live
++ * device tree export of the same firmware (V1UGS35H.75-14-8-1-2); see
++ * docs/FOGOS_PORT.md. Nothing here initializes hardware yet: the FOGOS
++ * machine config is a compile target, so no platform expert, CPU startup,
++ * PSCI, display, touch or UFS path uses these constants so far.
++ */
++
++#ifndef _PEXPERT_ARM64_FOGOS_H
++#define _PEXPERT_ARM64_FOGOS_H
++
++#define NO_MONITOR                1
++#define NO_ECORE                  1
++
++#define FOGOS                     1
++
++#define ARM_ARCH_TIMER
++#define __ARM_ARCH__              8
++#define __ARM_VMSA__              8
++#define __ARM_VFP__               4
++#define __ARM_COHERENT_CACHE__    1
++#define __ARM_DEBUG__             7
++#define __ARM_ENABLE_SWAP__       1
++#define __ARM_V8_CRYPTO_EXTENSIONS__ 1
++#define __ARM_PAN_AVAILABLE__     1
++#define __ARM_16K_PG__            1
++
++#define HAS_GIC_V3                1
++
++#ifndef ASSEMBLER
++#define PLATFORM_PANIC_LOG_DISABLED
++#endif /* ! ASSEMBLER */
++
++/*
++ * Qualcomm numbers the architected timer PPIs 1/2/3/0 (secure phys, phys,
++ * virt, hyp) instead of the usual 13/14/11/10: the virtual timer XNU uses
++ * (CNTV) is INTID 16 + 3 = 19. The live fogos FDT "arch_timer" node lists
++ * its interrupt as PPI 3 for the virtual timer.
++ */
++#define FOGOS_VTIMER_INTID        19
++#define FOGOS_IPI_SGI             1       // SGI used for cross-CPU signals
++
++#define GIC_SPURIOUS_IRQ          1023    // IRQ no. for GIC spurious interrupt
++
++/*
++ * Size of each redistributor region. The XBL config lists GICR at
++ * 0x0f240000 + 0x20000 while the live FDT lists 0x0f240000 + 0x100000;
++ * they agree once the 8 per-CPU frames are counted (8 * 0x20000 = 0x100000).
++ */
++#define GICR_PE_SIZE              0x20000
++
++/* GICv3 register definitions; see GICv3 spec (Arm IHI 0069G) */
++#define GICD_CTLR                 0x0
++
++/* Non-secure view of GICD_CTLR (DS=0) */
++#define GICD_CTLR_ENABLEGRP1      0x1
++#define GICD_CTLR_ENABLEGRP1A     0x2
++#define GICD_CTLR_ARE_NS          0x10
++#define GICD_CTLR_RWP             0x80000000
++
++#define GICR_TYPER                              0x08
++#define GICR_WAKER                              0x14
++#define GICR_IGROUPR0                           0x10080
++#define GICR_ISENABLER0                         0x10100
++#define GICR_IPRIORITYR0                        0x10400
++
++#define GICR_TYPER_AFFINITY_VALUE_SHIFT         32
++#define GICR_TYPER_LAST                         0x10
++
++#define GICR_WAKER_PROCESSORSLEEP               0x2
++#define GICR_WAKER_CHILDRENASLEEP               0x4
++
++#define ICC_CTLR_EOIMODE                        0x2
++
++#define ICC_SRE_SRE                             0x1
++/* End of GICv3 register definitions */
++
++#endif /* ! _PEXPERT_ARM64_FOGOS_H */
+
 diff --git a/pexpert/pexpert/arm64/Makefile b/pexpert/pexpert/arm64/Makefile
 index c7d274f..fd6bd10 100644
 --- a/pexpert/pexpert/arm64/Makefile
