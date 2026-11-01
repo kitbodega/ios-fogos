@@ -4,12 +4,13 @@
 
 ### Handoff update (2026-11-01)
 
-User reports the phone is now back on Motorola stock. ADB read-only check was
-attempted, but `adb devices -l` currently reports no attached devices; stock
-build, SKU, and boot state have not yet been re-confirmed from the handset.
-Next: reconnect/authorize USB debugging, collect `ro.build.fingerprint`,
-`ro.boot.hardware.sku`, boot slot and verified-boot properties, then pull a
-fresh live device tree if useful. No reboot, unlock, flash, or erase was done.
+ADB now confirms stock Android 15 on model `moto g34 5G`, device `fogos`, SKU
+`XT2363-1`; fingerprint `motorola/fogos_gn/fogos:15/V1UGS35H.75-14-8-1-2/dd02b7b-1de9c2:user/release-keys`,
+slot `_a`, `verifiedbootstate=orange`, `flash.locked=0`,
+`vbmeta.device_state=unlocked`. Attempted a read-only pull of
+`/sys/firmware/devicetree/base`, but Android's shell user is denied access by
+permissions, so the local pull yielded no tree. Use the already extracted
+official firmware DTB/DTBO instead. No reboot, unlock, flash, or erase was done.
 
 User wants the linked ios-sweet XNU/iOS project ported to the Moto G34. The
 phone was previously observed running a ColorOS 16 port which spoofed its
