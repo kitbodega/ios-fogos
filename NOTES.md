@@ -2,6 +2,35 @@
 
 ## New request: Moto G34 5G (`fogos`)
 
+### Handoff update (2026-11-02: first complete FOGOS build analyzed)
+
+**CI run 41360048907 finished with failure** on `9ad37d549d374990ff69e0edc03015fd0c93e410`.
+Build reached the final kernel link then reported about 264 undefined symbols,
+including arm64 cache routines and most `pmap_*` implementations. This is a
+configuration-selection failure, not evidence that the added FOGOS C code is
+missing hundreds of functions: `doconf` was invoked with `-soc fogos`, but
+there was no `config/MASTER.arm64.fogos`. The generated feature headers show
+`NNOS_ARM_ASM 0` and `NNOS_ARM_PMAP 0`; the link filelist contains no `pmap.o`
+or arm64 assembly objects. The equivalent SWEET bring-up config enables the
+open-source arm64 assembly and pmap needed in place of Apple-only KDK objects.
+
+**Local syntax check:** extracted buildtree is
+`/home/uriel/xnu-buildtree-41360048907`; applied commit `34e8b41`'s two
+`sleh.c`/`protos.h` edits to the buildtree copy and synchronized the generated
+export headers. `tools/xnu-cc.py` then passed both `pe_fiq.c` and `sleh.c`
+(0/2 failures). The first try caught the stale exported `protos.h`, confirming
+the local helper must account for read-only generated header copies.
+
+**Fix prepared:** new patch `0083-fogos-open-source-arm64-config.patch`
+adds `MASTER.arm64.fogos`, based on the final SWEET bring-up config and renamed
+for FOGOS. It applies cleanly to the local XNU source. `tools/validate-repo.py`
+recognizes 83 contiguous patches and all 19 Python tools compile; its 7 shell
+checks still fail only because this Windows checkout passes CRLF paths to bash.
+Next: review and commit 0083, push to `fork`, dispatch a fresh `xnu.yml`
+`machine_config=FOGOS` run, and confirm pmap/assembly are now in its generated
+link filelist before interpreting any remaining linker errors. No kernel image
+or boot result exists from run 41360048907.
+
 ### Handoff update (2026-11-01, evening: first FOGOS build reaches the compiler path)
 
 **Push unblocked:** `kitbodega` has only `pull` on `dipa-studio/ios-sweet` and the
