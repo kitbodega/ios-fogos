@@ -27,13 +27,18 @@ for FOGOS. It applies cleanly to the local XNU source. `tools/validate-repo.py`
 recognizes 83 contiguous patches and all 19 Python tools compile; its 7 shell
 checks still fail only because this Windows checkout passes CRLF paths to bash.
 Patch 0083 was committed as `bd21f58` and pushed to `fork/fogos-port-init`.
-Run `41361890221` was accidentally dispatched against the default `main` ref
-and cancelled immediately; it did not start any jobs. Correct run
-`41361903678` is queued against branch `fogos-port-init`, SHA
-`bd21f583b90034f5e2c6a8079f37f94b39e2e493`, with `machine_config=FOGOS`.
-Next: inspect its generated feature headers/link filelist to confirm the
-open-source pmap and assembly are included, then collect the final build result.
-No kernel image or boot result exists from run 41360048907.
+
+**Run 41361903678** (SHA `bd21f583b90034f5e2c6a8079f37f94b39e2e493`,
+branch `fogos-port-init`) confirmed the fix: its compile/link filelist includes
+`pmap.o`, `caches_asm.o`, `locore.o` and the other open-source arm64 routines.
+It then stopped at 39 compile errors, all in `bsd/sweet_hfs` sources. The HFS
+and pthread include flags are inside a `CURRENT_MACHINE_CONFIG == SWEET` guard;
+the FOGOS config therefore missed the forced `sweet_hfs_compat.h`, include
+paths, and staged provider flags. Prepared patch
+`0084-fogos-share-board-builtins.patch` widens the BSD and libkern Makefile
+guards to `SWEET || FOGOS`; it applies cleanly. Next: commit/push 0084 and
+dispatch another FOGOS build. The downloaded log and buildtree are in ignored
+`research/fogos-ci/run-41361903678*`. No kernel image or boot result exists.
 
 ### Handoff update (2026-11-01, evening: first FOGOS build reaches the compiler path)
 
