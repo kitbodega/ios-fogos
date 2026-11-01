@@ -58,9 +58,15 @@ firmware are at `dtb/fogos-stock-v1ugs35h-75-14-8-1-2.dtb` and
 
 Public reference tree cloned locally (ignored): `research/fogos_device` at
 `dab64e1`; confirms boot header v3, `holi` target, and the fogos source layout.
-An attempted sparse checkout of `android_kernel_motorola_sm6375` could not be
-checked out on Windows due to Linux's reserved filename `drivers/gpu/drm/nouveau/nvkm/subdev/i2c/aux.c`;
-no kernel source from that checkout has been used.
+Motorola kernel source cloned in WSL at
+`/home/uriel/src/android_kernel_motorola_sm6375`, branch `fifteen`, commit
+`afcf9ed` (shallow, blob-filtered sparse checkout). The working set includes
+ARM64 Qualcomm DTS/configs and Qualcomm clock, IRQ, SoC, UFS/SCSI, DRM/MSM,
+input, PHY, pinctrl, regulator, SPI/I2C, USB and audio sources. Its vendor
+config exists at `arch/arm64/configs/vendor/fogos_defconfig`; this branch has no
+fogos-named DTS source under `arch/arm64/boot/dts/qcom`, so use the supplied
+stock DTB/DTBO for board topology. The Windows checkout limitation was avoided
+by keeping this Linux kernel tree on WSL's ext4 filesystem.
 
 New reusable extractors: `tools/unpack_vendor_boot.py` and `tools/unpack_dtbo.py`.
 Both were run against the supplied firmware. `boot.img` header v3, vendor_boot
