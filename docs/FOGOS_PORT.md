@@ -65,10 +65,16 @@ The live FDT exposes three RAM ranges: `0x80000000+0x3bb00000`,
 `0xc0000000+0xc0000000`, and `0x180000000+0x100000000`. It also reserves
 several modem/DSP, hypervisor, WLAN, splash, and bootloader regions. CPU nodes
 use `enable-method=psci`; their MPIDRs are `0x000`, `0x100`, …, `0x700`,
-matching the A55-first order. The PSCI conduit still needs confirmation. The
-live GIC compatible is `arm,gic-v3`, with GICD at `0x0f200000+0x10000` and
-GICR at `0x0f240000+0x100000`. Its architectural timer node lists the virtual
-timer as PPI 3 (INTID 19).
+matching the A55-first order.
+
+The stock DTB confirms the interrupt wiring: `/soc/interrupt-controller@f200000`
+is `arm,gic-v3` with GICD `0x0f200000`+`0x10000` and GICR
+`0x0f240000`+`0x100000`, and `/soc/timer` is `arm,armv8-timer` with PPIs
+`1, 2, 3, 0` (secure physical, physical, virtual, hyp), so the virtual timer XNU
+uses is PPI 3 = INTID 19. The 1 MiB GICR window is exactly 8 redistributors x
+`0x20000`, which reconciles the XBL config's per-frame size with the FDT
+window. `/soc/psci` is `arm,psci-1.0` with `method = smc`: the conduit is SMC,
+not HVC. `tools/fogos-dtb-facts.py` prints these facts from the shipped DTB.
 
 The supplied CFC package is at
 `C:\ProgramData\RSA\Download\RomFiles\FOGOS_G_V1UGS35H.75_14_8_1_2_subsidy_DEFAULT_regulatory_DEFAULT_cid50_CFC.xml`.
