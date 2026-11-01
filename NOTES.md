@@ -36,12 +36,16 @@ and pthread include flags are inside a `CURRENT_MACHINE_CONFIG == SWEET` guard;
 the FOGOS config therefore missed the forced `sweet_hfs_compat.h`, include
 paths, and staged provider flags. Prepared patch
 `0084-fogos-share-board-builtins.patch` widens the BSD and libkern Makefile
-guards to `SWEET || FOGOS`; it applies cleanly. Next: commit/push 0084 and
-commit `eed7848` pushed it. Run `41362674949` is queued against
-`fogos-port-init`, SHA `eed7848907fb7ea016443ece30c1f4203737c9d7`, with
-`machine_config=FOGOS`. The downloaded log and buildtree for the previous run
-are in ignored `research/fogos-ci/run-41361903678*`. No kernel image or boot
-result exists.
+guards to `SWEET || FOGOS`; it applies cleanly. Commit `eed7848` pushed it.
+Run `41362674949` (`eed7848907fb7ea016443ece30c1f4203737c9d7`) also reached
+the final link. It has only two undefined symbols: `_sweet_sample_task` (the
+implementation is inside a SWEET-only preprocessor guard) and
+`_ml_enable_monitor` (the existing SWEET no-op stub is also SWEET-only).
+Prepared changes widen the sample function guard in patch 0054 and add patch
+`0085-fogos-ml-enable-monitor.patch` to widen the existing stub guard. The run
+log and buildtree are in ignored `research/fogos-ci/run-41362674949*`. Next:
+validate and commit these changes, dispatch one more FOGOS CI build, and check
+whether it links. No kernel image or boot result exists yet.
 
 ### Handoff update (2026-11-01, evening: first FOGOS build reaches the compiler path)
 

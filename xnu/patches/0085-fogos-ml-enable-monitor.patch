@@ -1,0 +1,26 @@
+--- a/osfmk/arm64/machine_routines.c
++++ b/osfmk/arm64/machine_routines.c
+@@ -2162,21 +2162,21 @@
+ 	}
+ 
+ 	return dec;
+ }
+ 
+-#if defined(SWEET)
++#if defined(SWEET) || defined(FOGOS)
+ /*
+  * sweet: arm_vm_init() calls this unconditionally; Apple's definition (it
+  * enters the PPL/monitor) ships only in the closed per-SoC library. There is
+  * no monitor on SWEET.
+  */
+ void
+ ml_enable_monitor(void)
+ {
+ }
+-#endif /* SWEET */
++#endif /* SWEET || FOGOS */
+ 
+ boolean_t
+ ml_get_timer_pending(void)
+ {
+ 	uint64_t cntv_ctl = __builtin_arm_rsr64("CNTV_CTL_EL0");

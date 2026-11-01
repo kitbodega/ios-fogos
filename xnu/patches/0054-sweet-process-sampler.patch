@@ -82,7 +82,7 @@
 +	task_unlock(task);
 +}
 +
- #endif /* ARM64_BOARD_CONFIG_SWEET */
+ #endif /* ARM64_BOARD_CONFIG_SWEET || ARM64_BOARD_CONFIG_FOGOS */
  
  kern_return_t
 --- a/iokit/Kernel/IOUserClient.cpp
