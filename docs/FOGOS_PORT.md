@@ -31,11 +31,13 @@ and use compiler errors to close build gaps before adding board bring-up code.
 
 ## Hardware evidence collected
 
-The connected phone's ColorOS 16 build reports OPPO product properties, but
-read-only boot properties and the live device tree identify the hardware as
-Moto G34 `XT2363-1`, `fogos`, Qualcomm `blair`. The running ROM reports Android
-16 / `PLE110_16.0.10.600(CN01)`; the local Motorola firmware package is Android
-15, build `V1UGS35H.75-14-8-1-2`.
+The phone previously ran a ColorOS 16 build that reported OPPO product
+properties; read-only boot properties and its live device tree identified the
+hardware as Moto G34 `XT2363-1`, `fogos`, Qualcomm `blair`. The user has since
+returned it to stock. ADB confirms Android 15 build
+`V1UGS35H.75-14-8-1-2`, SKU `XT2363-1`, unlocked bootloader, slot `_a`. Stock
+Android denies the shell user access to `/sys/firmware/devicetree/base`; the
+extracted stock DTB/DTBO remain the board-data source.
 
 The live tree reports 8 CPUs: CPUs 0–5 have MIDR part `0xd05` (Cortex-A55),
 and CPUs 6–7 have part `0xd41` (Cortex-A78). This differs from sweet's two
@@ -89,11 +91,33 @@ steps; that script was only read and must not be run for this bring-up.
 - Both phones are ARM64 Qualcomm devices, but that alone does not establish
   compatible page sizes, CPU features, boot protocol or XNU driver support.
 
+## Extracted Linux driver references (2026-11-01)
+
+The Motorola kernel source is checked out on branch `fifteen`, commit
+`afcf9ed70547bb7690f578d0dfa099a9346c7864`, in WSL at
+`/home/uriel/src/android_kernel_motorola_sm6375`. A curated 385-file, 8.47 MB
+source-only copy is under the ignored local directory
+`research/fogos-driver-reference/`. It includes `fogos_defconfig`, the Moto
+config fragment, and C/header/build files for these hardware paths:
+
+| Hardware | Linux source/config evidence | XNU work indicated |
+| --- | --- | --- |
+| GICv3 / Qualcomm MPM | `drivers/irqchip/irq-gic-v3.c`, `qcom-mpm-blair.c`; `CONFIG_ARM_GIC_V3=y` | Initialize the GIC from fogos DT data; route the virtual timer and IPIs through XNU's interrupt path. |
+| UFS | `drivers/scsi/ufs/ufshcd.c`, `ufshcd-pltfrm.c`, `ufs-qcom.c`; UFS/QTI config enabled | Implement an XNU UFSHCI path with the fogos handoff, clocks, reset and DMA behavior. |
+| Touch | `drivers/input/touchscreen/ilitek_v3_mmi/ilitek_v3_qcom.c` binds `tchip,ilitek`; `CONFIG_TOUCHSCREEN_ILITEK_CHIPSET=m`; stock `/proc/modules` confirms `ilitek_v3_mmi` is loaded | Reimplement the Ilitek bus/protocol and publish XNU HID events; Linux module itself cannot load in XNU. ADB is denied access to the `.ko` file. |
+| Display / DSI | `techpack/display/msm/dsi/dsi_panel.c`, `dsi_display.c`, `dsi_ctrl.c`, `dsi_phy.c`; `CONFIG_DRM_MIPI_DSI=y`, while `CONFIG_DRM_MSM` is disabled in this defconfig | Port only the DSI host and active panel initialization needed by XNU. Panel timings/commands are expected in the DTB/DTBO; the board-specific panel source was not found in this tree. |
+| Clocks / power | Blair GCC/dispcc/gpucc sources, RPMh, GENI, SPMI, regulators | Identify the minimum clocks, resets and power rails before bringing up UFS, DSI or touch. |
+
+The extraction contains source references only: no `.ko` modules or embedded
+touch firmware headers/blobs were copied. The output is ignored by Git; only
+the extraction helper and this map are tracked. Linux code is for register,
+sequencing and protocol study and must be reimplemented for XNU.
+
 ## Bring-up sequence
 
-1. Confirm the bootloader's real unlock state in fastboot and whether the
-   matching Motorola unlock process is available. Keep calibration partitions
-   safe and outside git.
+1. ADB reports `flash.locked=0` and `vbmeta.device_state=unlocked`; verify
+   that state through fastboot and determine whether `fastboot boot` accepts a
+   temporary image. Keep calibration partitions safe and outside git.
 2. Identify the exact live DTBO selection and compare the active live tree
    with the extracted stock DTB/DTBO. Obtain the Motorola kernel source for the
    firmware build and map CPU, GIC, PSCI, RAM, reserved memory, UFS, display and

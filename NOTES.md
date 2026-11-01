@@ -67,15 +67,26 @@ config exists at `arch/arm64/configs/vendor/fogos_defconfig`; this branch has no
 fogos-named DTS source under `arch/arm64/boot/dts/qcom`, so use the supplied
 stock DTB/DTBO for board topology. The Windows checkout limitation was avoided
 by keeping this Linux kernel tree on WSL's ext4 filesystem.
+Curated source references were copied to ignored
+`research/fogos-driver-reference/` using `tools/extract_fogos_linux_refs.py`:
+385 C/header/config/build files (8,468,534 bytes), including UFS/QTI, GICv3,
+Blair clocks, DSI host and Ilitek touchscreen. No `.ko` or touch firmware blob
+was copied. `fogos_defconfig` enables the Ilitek driver as a module, UFS/QTI
+and GICv3; it has `CONFIG_DRM_MSM` disabled. The Ilitek Qualcomm source binds
+`tchip,ilitek`; panel programming data was not found in the kernel source and
+must be read from the stock DTB/DTBO.
+ADB `/proc/modules` confirms `ilitek_v3_mmi` is loaded on the stock phone.
+Reading `/vendor/lib/modules/5.4-gki/modules.load` and pulling
+`ilitek_v3_mmi.ko` are denied to the shell user, so the compiled module was not
+extracted from the live filesystem. Its source reference is extracted locally.
 
 New reusable extractors: `tools/unpack_vendor_boot.py` and `tools/unpack_dtbo.py`.
 Both were run against the supplied firmware. `boot.img` header v3, vendor_boot
 header v3 (DTB at file offset `0xb4000`, size `323929`), DTBO has two entries.
-No XNU fogos kernel/image has been built. Next: reconcile memory/reserved
-regions, hardware DT and XBL map, then determine real bootloader state. ADB
-properties are inconsistent (`flash.locked=1`, `vbmeta.device_state=locked`,
-`verifiedbootstate=orange`); fastboot has not been entered. No reboot, unlock,
-flash, or erase was performed. The firmware's flashfile explicitly erases
+No XNU fogos kernel/image has been built yet. ADB now reports
+`flash.locked=0`, `vbmeta.device_state=unlocked`, `verifiedbootstate=orange`;
+fastboot has not been entered and no boot image has been attempted. No reboot,
+unlock, flash, or erase was performed. The firmware's flashfile explicitly erases
 userdata; never execute its flashing script for this task.
 See `docs/FOGOS_PORT.md` for the longer handoff.
 
