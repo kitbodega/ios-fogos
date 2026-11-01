@@ -45,7 +45,9 @@ Prepared changes widen the sample function guard in patch 0054 and add patch
 `0085-fogos-ml-enable-monitor.patch` to widen the existing stub guard. The run
 log and buildtree are in ignored `research/fogos-ci/run-41362674949*`. Next:
 validate and commit these changes, dispatch one more FOGOS CI build, and check
-whether it links. No kernel image or boot result exists yet.
+whether it links. These changes are committed as `b872f73` and pushed to the
+fork. Run `41363602897` is queued on `fogos-port-init` at that commit; no kernel
+image or boot result exists yet.
 
 ### Handoff update (2026-11-01, evening: first FOGOS build reaches the compiler path)
 
