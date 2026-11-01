@@ -26,10 +26,14 @@ adds `MASTER.arm64.fogos`, based on the final SWEET bring-up config and renamed
 for FOGOS. It applies cleanly to the local XNU source. `tools/validate-repo.py`
 recognizes 83 contiguous patches and all 19 Python tools compile; its 7 shell
 checks still fail only because this Windows checkout passes CRLF paths to bash.
-Next: review and commit 0083, push to `fork`, dispatch a fresh `xnu.yml`
-`machine_config=FOGOS` run, and confirm pmap/assembly are now in its generated
-link filelist before interpreting any remaining linker errors. No kernel image
-or boot result exists from run 41360048907.
+Patch 0083 was committed as `bd21f58` and pushed to `fork/fogos-port-init`.
+Run `41361890221` was accidentally dispatched against the default `main` ref
+and cancelled immediately; it did not start any jobs. Correct run
+`41361903678` is queued against branch `fogos-port-init`, SHA
+`bd21f583b90034f5e2c6a8079f37f94b39e2e493`, with `machine_config=FOGOS`.
+Next: inspect its generated feature headers/link filelist to confirm the
+open-source pmap and assembly are included, then collect the final build result.
+No kernel image or boot result exists from run 41360048907.
 
 ### Handoff update (2026-11-01, evening: first FOGOS build reaches the compiler path)
 
