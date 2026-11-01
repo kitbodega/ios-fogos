@@ -2,12 +2,22 @@
 
 ## New request: Moto G34 5G (`fogos`)
 
+### Handoff update (2026-11-01)
+
+User reports the phone is now back on Motorola stock. ADB read-only check was
+attempted, but `adb devices -l` currently reports no attached devices; stock
+build, SKU, and boot state have not yet been re-confirmed from the handset.
+Next: reconnect/authorize USB debugging, collect `ro.build.fingerprint`,
+`ro.boot.hardware.sku`, boot slot and verified-boot properties, then pull a
+fresh live device tree if useful. No reboot, unlock, flash, or erase was done.
+
 User wants the linked ios-sweet XNU/iOS project ported to the Moto G34. The
-phone runs a ColorOS 16 port which spoofs its Android product identity as OPPO
-PLE110; the live tree and boot arguments identify the underlying hardware as
-Moto G34 `XT2363-1`, `fogos` / Qualcomm `blair`. Running ROM: Android 16,
-`PLE110_16.0.10.600(CN01)`. Stock firmware supplied locally: Android 15,
-`V1UGS35H.75-14-8-1-2`.
+phone was previously observed running a ColorOS 16 port which spoofed its
+Android product identity as OPPO PLE110; its live tree and boot arguments
+identified the underlying hardware as Moto G34 `XT2363-1`, `fogos` / Qualcomm
+`blair`. User now reports stock is installed, but ADB is not currently
+connected, so exact installed build remains unverified. Stock firmware supplied
+locally: Android 15, `V1UGS35H.75-14-8-1-2`.
 
 Read-only bring-up evidence: 8 cores (six Cortex-A55 MIDR `0xd05`, two
 Cortex-A78 MIDR `0xd41`); live panel `qcom,mdss_dsi_txd_ili9883c_6528_hd_plus_120_video`,
