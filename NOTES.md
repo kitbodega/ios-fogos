@@ -2,7 +2,51 @@
 
 ## New request: Moto G34 5G (`fogos`)
 
-### Handoff update (2026-11-01)
+### Handoff update (2026-11-01, evening: first FOGOS build reaches the compiler path)
+
+**Push unblocked:** `kitbodega` has only `pull` on `dipa-studio/ios-sweet` and the
+push is rejected 403. Created the fork `kitbodega/ios-sweet` (public, same as
+upstream), pushed `fogos-port-init` there and enabled Actions with
+`PUT /repos/kitbodega/ios-sweet/actions/permissions` (a fresh fork reports
+"actions disabled" until that call; `gh workflow run` fails with
+"workflow not found on the default branch" before it). Remote `fork` is the
+push target; `origin` stays `dipa-studio`.
+
+**macos-14 is gone (2026-11-02 retirement):** the first dispatch was cancelled in
+1 s by the final brownout window (2026-11-01 14:00 UTC - 2026-11-02 00:00 UTC,
+`actions/runner-images#13518`). `macos-15` ships Xcode 16.0-16.4 and 26.x only,
+so the old "Xcode 15 iig matches the xnu-8796 IORPC ABI" pin cannot be honored.
+`xnu.yml` now runs on `macos-15`, selects the oldest installed Xcode (16.0) and
+reports `xcrun --find iig` without failing when it is missing.
+
+**Run 41359300884 (macos-15, `machine_config=FOGOS`, DEVELOPMENT) failed in
+`installhdrs`, not in the compiler:** `No rule to make target
+.../pexpert/pexpert/arm64//FOGOS.h`. Patch 0082 listed the board header in
+`pexpert/pexpert/arm64/Makefile` and included it from `board_config.h` but
+never created the file. The same run also showed the `Package build tree` step
+broken on macos-15 (no `Kernel.framework/.../PrivateHeaders/platform` in the
+macOS 15 SDK - it lives in the KDK - and `build/xnu.obj` absent when the build
+fails early).
+
+**Fix (commit `9ad37d5`):** new `pexpert/pexpert/arm64/FOGOS.h` with the board
+facts taken from the stock DTB/live tree (GICv3 with two security states,
+virtual timer PPI 3 = INTID 19, 8 redistributors x 0x20000 = the 1 MiB GICR
+window the FDT lists, 16K pages, ARMv8.2-A+crypto, no PAC). `pexpert/arm/pe_fiq.c`
+selects `BOARD_VTIMER_INTID`/`BOARD_IPI_SGI`/`BOARD_GIC_NAME` so SWEET and FOGOS
+share the GICv3 group-1 path; SWEET console output is unchanged. Patch 0082
+carries both changes and was validated by reverse-applying the new hunks to an
+LF copy of the patched sources. The packaging step now takes the platform
+headers from the KDK and tars whichever of `build/xnu.obj`,
+`build/xnu-hdrs.obj`, `fakeroot/usr/local/include`, `xnu` exist.
+
+Run 41360048907 is the first build with the board header (dispatched 23:01 UTC);
+its log/artifact state is recorded below once it finishes. **Local compile pan:
+the full XNU build only exists on macOS CI.** The loop afterwards is
+`xnu-buildtree` artifact + `tools/xnu-cc.py` (WSL, clang at `/usr/bin/clang` 21
+works; the old `~/swift/usr/bin/clang` is gone) for per-file syntax checks, and
+CI only for a full link/build.
+
+### Handoff update (2026-11-01, morning)
 
 ADB now confirms stock Android 15 on model `moto g34 5G`, device `fogos`, SKU
 `XT2363-1`; fingerprint `motorola/fogos_gn/fogos:15/V1UGS35H.75-14-8-1-2/dd02b7b-1de9c2:user/release-keys`,

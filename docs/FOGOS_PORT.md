@@ -16,18 +16,32 @@ not fogos artifacts.
 
 ## XNU build target (2026-11-01)
 
-Added an initial `FOGOS` machine configuration for XNU `8796.141.3`, matching
-the existing macOS 13.5 CI build. It sets an ARMv8.2-A+crypto, plain `arm64`
-compile target and registers the Qualcomm Cortex-A cache-line size. The common
-source-staging scripts now run for `FOGOS` so CI can apply the existing patch
-stack. This is a **compile-only scaffold**: it does not enable `SWEET` hardware
-code and does not implement a Fogos platform expert, CPU startup, PSCI/GIC,
-display, touch, UFS, or boot path. No `FOGOS` kernel has been compiled yet.
-CI attempt is currently blocked before dispatch: pushing the local branch was
-rejected with HTTP 403 because the connected GitHub account lacks write access
-to `dipa-studio/ios-sweet`. No run ID or build result exists. Next: push this
-branch with an account that has write access, then run `machine_config=FOGOS`
-and use compiler errors to close build gaps before adding board bring-up code.
+The initial `FOGOS` machine configuration for XNU `8796.141.3` (macOS 13.5 CI
+build) is an ARMv8.2-A+crypto, plain `arm64` compile target with the Qualcomm
+Cortex-A cache-line size registered. It now has the board header XNU requires:
+`pexpert/pexpert/arm64/FOGOS.h` (GICv3 with two security states, virtual timer
+PPI 3 = INTID 19, 8 redistributors x 0x20000 = the 1 MiB GICR window in the
+live FDT, 16K pages). `pexpert/arm/pe_fiq.c` picks the board timer INTID and IPI
+SGI through `BOARD_*` macros shared with SWEET, whose console output is
+unchanged.
+
+This is still a **compile-only scaffold**: it does not enable `SWEET` hardware
+code and does not implement a Fogos platform expert, CPU startup, PSCI, display,
+touch, UFS, or boot path. Only a `DEVELOPMENT` FOGOS build is attempted; the
+first one failed in `installhdrs` before any source was compiled.
+
+## CI runner (2026-11-01)
+
+`macos-14`, the only hosted image with Xcode 15.x (whose `iig` matched the
+xnu-8796 IORPC ABI), is retired on 2026-11-02 and already failed its final
+brownout. `xnu.yml` runs on `macos-15` and selects its oldest Xcode (16.0).
+Whether Xcode 16's `iig` output is usable for xnu-8796 is still unverified: the
+first macos-15 run died before reaching it.
+
+Because the connected GitHub account (`kitbodega`) lacks write access to
+`dipa-studio/ios-sweet`, builds run from the fork `kitbodega/ios-sweet`
+(Actions must be enabled there once with
+`PUT /repos/<owner>/<repo>/actions/permissions`).
 
 ## Hardware evidence collected
 
