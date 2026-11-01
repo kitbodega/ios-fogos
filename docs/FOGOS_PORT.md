@@ -23,8 +23,11 @@ source-staging scripts now run for `FOGOS` so CI can apply the existing patch
 stack. This is a **compile-only scaffold**: it does not enable `SWEET` hardware
 code and does not implement a Fogos platform expert, CPU startup, PSCI/GIC,
 display, touch, UFS, or boot path. No `FOGOS` kernel has been compiled yet.
-Next: run GitHub Actions with `machine_config=FOGOS`, then use compiler errors
-to close the build gaps before adding board bring-up code.
+CI attempt is currently blocked before dispatch: pushing the local branch was
+rejected with HTTP 403 because the connected GitHub account lacks write access
+to `dipa-studio/ios-sweet`. No run ID or build result exists. Next: push this
+branch with an account that has write access, then run `machine_config=FOGOS`
+and use compiler errors to close build gaps before adding board bring-up code.
 
 ## Hardware evidence collected
 

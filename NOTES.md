@@ -17,9 +17,12 @@ initial `FOGOS` compile target (plain ARM64, ARMv8.2-A+crypto) and allowed the
 existing staged-source scripts to run for FOGOS so the patch stack can apply.
 This is compile-only: no Fogos platform expert, CPU startup, PSCI/GIC, display,
 touch, UFS or boot path is present. The patch applies cleanly to locally
-patched XNU `8796.141.3` through patch 0030. Full patch-stack CI build is still
-pending; there is no build or boot result yet. Next: commit and dispatch
-`xnu.yml` with `machine_config=FOGOS`, then resolve compile errors.
+patched XNU `8796.141.3` through patch 0030. Commit `51335ff` is local. CI was
+not started: `git push -u origin fogos-port-init` was rejected HTTP 403
+(`Permission to dipa-studio/ios-sweet.git denied to kitbodega`). No run ID or
+build/boot result exists. Next: push the branch with an account that has repo
+write access, then dispatch `xnu.yml` with `machine_config=FOGOS` and resolve
+compile errors.
 
 User wants the linked ios-sweet XNU/iOS project ported to the Moto G34. The
 phone was previously observed running a ColorOS 16 port which spoofed its
