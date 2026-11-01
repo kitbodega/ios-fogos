@@ -39,12 +39,38 @@ LF copy of the patched sources. The packaging step now takes the platform
 headers from the KDK and tars whichever of `build/xnu.obj`,
 `build/xnu-hdrs.obj`, `fakeroot/usr/local/include`, `xnu` exist.
 
-Run 41360048907 is the first build with the board header (dispatched 23:01 UTC);
-its log/artifact state is recorded below once it finishes. **Local compile pan:
-the full XNU build only exists on macOS CI.** The loop afterwards is
-`xnu-buildtree` artifact + `tools/xnu-cc.py` (WSL, clang at `/usr/bin/clang` 21
-works; the old `~/swift/usr/bin/clang` is gone) for per-file syntax checks, and
-CI only for a full link/build.
+Run 41360048907 is the first build with the board header (dispatched 23:01 UTC,
+commit `9ad37d5`); its log/artifact state is recorded below once it finishes.
+**Local compile pan: the full XNU build only exists on macOS CI.** The loop
+afterwards is `xnu-buildtree` artifact + `tools/xnu-cc.py` (WSL, clang at
+`/usr/bin/clang` 21 works; the old `~/swift/usr/bin/clang` is gone) for
+per-file syntax checks, and CI only for a full link/build.
+
+**Self-inflicted break found and fixed before the next run (`34e8b41`):**
+`9ad37d5` renamed `sweet_vtimer_intid` to `board_vtimer_intid` in `pe_fiq.c`
+but left the declaration in `pexpert/pexpert/arm/protos.h` and the Group-1 IRQ
+path in `osfmk/arm64/sleh.c` pointing at the old symbol. FOGOS would have
+escaped it (its `sleh.c` took the `#else` branch) but **SWEET would no longer
+compile**. Both now use `board_vtimer_intid` under `SWEET || FOGOS`, so FOGOS
+also gets the `ICC_IAR1_EL1` timer/IPI path it needs. Patch 0082
+(351 lines) carries the four sections; validated by reverse-applying them to
+LF copies.
+
+**Board numbers re-verified against the shipped DTB** with the new
+`tools/fogos-dtb-facts.py`: GICD `0x0f200000`+`0x10000`, GICR
+`0x0f240000`+`0x100000` (8 x `0x20000`), timer PPIs `1,2,3,0` (virtual = PPI 3
+= INTID 19), PSCI 1.0 `method = smc`, CPUs `reg=0,0x100..0x700`. Neither dtbo
+overlay carries GIC/timer/CPU nodes.
+
+**Local checkout traps (documented in `docs/FOGOS_PORT.md`):**
+`core.autocrlf=true` and no `.gitattributes`, so the working tree and
+`research/xnu-8796.141.3` are CRLF while `xnu/patches/*` must stay LF (commit,
+then check `git show HEAD:<patch> | grep -c $'\r'` == 0). Consequently
+`tools/validate-repo.py` reports 7 shell-syntax failures locally that are pure
+CRLF artifacts; patch numbering (0001-0082 contiguous) and the Python checks
+are the parts that mean something locally.
+
+Docs-only commit `20328f8` adds the local iteration runbook.
 
 ### Handoff update (2026-11-01, morning)
 
