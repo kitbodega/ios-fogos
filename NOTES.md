@@ -50,6 +50,13 @@ flash, or erase was performed. The firmware's flashfile explicitly erases
 userdata; never execute its flashing script for this task.
 See `docs/FOGOS_PORT.md` for the longer handoff.
 
+Build feasibility check (2026-11-01): `.github/workflows/xnu.yml` builds with
+the `DEVELOPMENT` config on macOS CI and exposes a `machine_config` input, but
+the patch series registers only `SWEET` (no `FOGOS` machine config/master or
+Fogos platform drivers). Dispatching `machine_config=FOGOS` now would not
+produce a fogos kernel. No build was dispatched. First add the FOGOS XNU
+configuration and board-specific boot/platform code, then build through CI.
+
 ## Agent handoff / active work (2026-10-15, latest)
 
 ### >>> UPDATE 2026-10-18 (read first, then the 10-17 handoff below) <<<
