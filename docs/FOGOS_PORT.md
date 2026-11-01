@@ -21,14 +21,17 @@ build) is an ARMv8.2-A+crypto, plain `arm64` compile target with the Qualcomm
 Cortex-A cache-line size registered. It now has the board header XNU requires:
 `pexpert/pexpert/arm64/FOGOS.h` (GICv3 with two security states, virtual timer
 PPI 3 = INTID 19, 8 redistributors x 0x20000 = the 1 MiB GICR window in the
-live FDT, 16K pages). `pexpert/arm/pe_fiq.c` picks the board timer INTID and IPI
-SGI through `BOARD_*` macros shared with SWEET, whose console output is
-unchanged.
+live FDT, 16K pages). `pexpert/arm/pe_fiq.c` exports `board_vtimer_intid`,
+picked from `SWEET_VTIMER_INTID` or `FOGOS_VTIMER_INTID` through `BOARD_*`
+macros; `pexpert/pexpert/arm/protos.h` declares it and `osfmk/arm64/sleh.c`
+uses it in the Group-1 IRQ path, which FOGOS shares with SWEET. SWEET console
+output is unchanged.
 
 This is still a **compile-only scaffold**: it does not enable `SWEET` hardware
 code and does not implement a Fogos platform expert, CPU startup, PSCI, display,
-touch, UFS, or boot path. Only a `DEVELOPMENT` FOGOS build is attempted; the
-first one failed in `installhdrs` before any source was compiled.
+touch, UFS, or boot path. Only a `DEVELOPMENT` FOGOS build is attempted. The
+first one (`41359300884`) failed in `installhdrs` because the board header did
+not exist yet; the next one builds on that fix.
 
 ## CI runner (2026-11-01)
 
@@ -42,6 +45,39 @@ Because the connected GitHub account (`kitbodega`) lacks write access to
 `dipa-studio/ios-sweet`, builds run from the fork `kitbodega/ios-sweet`
 (Actions must be enabled there once with
 `PUT /repos/<owner>/<repo>/actions/permissions`).
+
+## Local iteration (2026-11-01)
+
+A full XNU build needs macOS (Xcode, `mig`/`iig`, the Apple SDK), so the compile
+loop is: change the patch stack here, run one CI build, then replay single
+compile commands locally from the `xnu-buildtree` artifact.
+
+```
+# one CI build (8-15 min, mostly queue); keep_going=true lists many errors
+gh workflow run xnu.yml --repo kitbodega/ios-sweet --ref fogos-port-init \
+  -f machine_config=FOGOS -f kernel_config=DEVELOPMENT -f keep_going=true
+
+# log + artifact
+gh run view <id> --repo kitbodega/ios-sweet --log > research/fogos-ci/run-<id>.log
+gh run download <id> --repo kitbodega/ios-sweet -n xnu-buildtree -D research/fogos-ci
+
+# WSL: syntax-check the sources whose compile command contains a filter string
+cd /mnt/c/Users/Admin/Downloads/ios-sweet
+tar xzf research/fogos-ci/buildtree.tgz -C /tmp/xnu-buildtree
+XNU_CC_CLANG=/usr/bin/clang python3 tools/xnu-cc.py \
+  research/fogos-ci/run-<id>.log /tmp/xnu-buildtree pexpert/arm/pe_fiq.c
+```
+
+Two Windows-checkout traps:
+
+- the research tree and the working copy are CRLF (`core.autocrlf=true`, no
+  `.gitattributes`), but every file in `xnu/patches/` must be LF; commit
+  patches and then confirm with `git show HEAD:<patch> | grep -c $'\r'` (0).
+  Validate hunks by reverse-applying them to an LF copy of the patched sources,
+  not to the working tree.
+- `tools/validate-repo.py` reports shell-syntax failures locally only because
+  `bash -n` sees CRLF; on a LF checkout (CI, macOS, Linux) the same scripts
+  pass. Patch numbering and the Python checks are meaningful locally.
 
 ## Hardware evidence collected
 
