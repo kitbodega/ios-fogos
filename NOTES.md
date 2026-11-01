@@ -23,9 +23,13 @@ its `uefiplat.cfg` gives UFS regs `0x04800000`, MDSS `0x05e00000`, GICD
 
 Live FDT memory ranges are `0x80000000+0x3bb00000`,
 `0xc0000000+0xc0000000`, `0x180000000+0x100000000`, plus explicit reserved
-regions. CPU nodes use `enable-method=psci`; FDT compatible is `arm,gic-v3`.
-PSCI conduit and full RAM/reserved-region reconciliation remain open. A
-read-only tree export of `/soc` is at `dtb/fogos-live-soc/`; vendor tree and
+regions. CPU nodes use `enable-method=psci`, MPIDRs 0x0, 0x100, ..., 0x700;
+FDT compatible is `arm,gic-v3`, GICD is 0x0f200000+0x10000, GICR is
+0x0f240000+0x100000, and virtual timer is PPI3 / INTID 19. UFS node has three
+register ranges starting 0x04804000. The XBL config says GICR is 0x20000,
+while the live FDT says 0x100000. PSCI conduit and full RAM/reserved-region
+reconciliation remain open. A read-only tree export of `/soc` is at
+`dtb/fogos-live-soc/`; vendor tree and
 firmware are at `dtb/fogos-stock-v1ugs35h-75-14-8-1-2.dtb` and
 `dtb/fogos-stock-v1ugs35h-75-14-8-1-2-overlays/`.
 

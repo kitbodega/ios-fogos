@@ -33,8 +33,11 @@ the selected panel name `ili9883c`.
 The live FDT exposes three RAM ranges: `0x80000000+0x3bb00000`,
 `0xc0000000+0xc0000000`, and `0x180000000+0x100000000`. It also reserves
 several modem/DSP, hypervisor, WLAN, splash, and bootloader regions. CPU nodes
-use `enable-method=psci`; the PSCI conduit still needs confirmation. The live
-GIC compatible is `arm,gic-v3`.
+use `enable-method=psci`; their MPIDRs are `0x000`, `0x100`, …, `0x700`,
+matching the A55-first order. The PSCI conduit still needs confirmation. The
+live GIC compatible is `arm,gic-v3`, with GICD at `0x0f200000+0x10000` and
+GICR at `0x0f240000+0x100000`. Its architectural timer node lists the virtual
+timer as PPI 3 (INTID 19).
 
 The supplied CFC package is at
 `C:\ProgramData\RSA\Download\RomFiles\FOGOS_G_V1UGS35H.75_14_8_1_2_subsidy_DEFAULT_regulatory_DEFAULT_cid50_CFC.xml`.
@@ -45,9 +48,11 @@ outputs and the live device-tree export are under ignored `dtb/`.
 
 The matching XBL `uefiplat.cfg` dump lists UFS registers at `0x04800000`,
 MDSS at `0x05e00000`, GICD at `0x0f200000`, GICR at `0x0f240000`, and the
-Qualcomm SPMI arbiter at `0x01c00000`. The UFS host node in the live FDT is at
-`0x04804000`. The live tree and UEFI memory map still need to be reconciled
-before choosing XNU's physical map and reserved regions.
+Qualcomm SPMI arbiter at `0x01c00000`. The live FDT's UFS node begins at
+`0x04804000` and has three register ranges (`0x04804000+0x3000`,
+`0x04808000+0x8000`, `0x04810000+0x9000`). The XBL config lists a 128 KiB GICR
+region while the live tree lists 1 MiB; reconcile this before using the XBL
+memory map to initialize XNU.
 
 ADB exposes inconsistent boot-lock properties (`flash.locked=1`,
 `vbmeta.device_state=locked`, while `verifiedbootstate=orange`), so the actual
