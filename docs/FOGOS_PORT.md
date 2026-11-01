@@ -14,27 +14,70 @@ home screen comes much later: it also needs working storage, display, touch,
 and a compatible iOS root image. The existing `sweet` root image and ADT are
 not fogos artifacts.
 
-## Known differences to resolve
+## Hardware evidence collected
+
+The connected phone's ColorOS 16 build reports OPPO product properties, but
+read-only boot properties and the live device tree identify the hardware as
+Moto G34 `XT2363-1`, `fogos`, Qualcomm `blair`. The running ROM reports Android
+16 / `PLE110_16.0.10.600(CN01)`; the local Motorola firmware package is Android
+15, build `V1UGS35H.75-14-8-1-2`.
+
+The live tree reports 8 CPUs: CPUs 0–5 have MIDR part `0xd05` (Cortex-A55),
+and CPUs 6–7 have part `0xd41` (Cortex-A78). This differs from sweet's two
+Cortex-A76 cores. Its live boot arguments select DTB index 0 and DTBO index 0,
+and identify the active panel as
+`qcom,mdss_dsi_txd_ili9883c_6528_hd_plus_120_video`. The selected timing node
+reports 720×1600 at 120 Hz. The active touch node is `tchip,ilitek`, gated on
+the selected panel name `ili9883c`.
+
+The live FDT exposes three RAM ranges: `0x80000000+0x3bb00000`,
+`0xc0000000+0xc0000000`, and `0x180000000+0x100000000`. It also reserves
+several modem/DSP, hypervisor, WLAN, splash, and bootloader regions. CPU nodes
+use `enable-method=psci`; the PSCI conduit still needs confirmation. The live
+GIC compatible is `arm,gic-v3`.
+
+The supplied CFC package is at
+`C:\ProgramData\RSA\Download\RomFiles\FOGOS_G_V1UGS35H.75_14_8_1_2_subsidy_DEFAULT_regulatory_DEFAULT_cid50_CFC.xml`.
+It contains `boot.img` (header v3), `vendor_boot.img` (vendor header v3), and
+`dtbo.img` (two overlays). The DTB is in `vendor_boot`; `tools/unpack_vendor_boot.py`
+extracts it, and `tools/unpack_dtbo.py` extracts the overlay entries. Local
+outputs and the live device-tree export are under ignored `dtb/`.
+
+The matching XBL `uefiplat.cfg` dump lists UFS registers at `0x04800000`,
+MDSS at `0x05e00000`, GICD at `0x0f200000`, GICR at `0x0f240000`, and the
+Qualcomm SPMI arbiter at `0x01c00000`. The UFS host node in the live FDT is at
+`0x04804000`. The live tree and UEFI memory map still need to be reconciled
+before choosing XNU's physical map and reserved regions.
+
+ADB exposes inconsistent boot-lock properties (`flash.locked=1`,
+`vbmeta.device_state=locked`, while `verifiedbootstate=orange`), so the actual
+bootloader state is unconfirmed. No reboot, unlock, flash, or erase was done.
+The firmware's `flashfile.xml` contains partition flashing and userdata erase
+steps; that script was only read and must not be run for this bring-up.
+
+## Remaining hardware and engineering work
 
 - SoC, CPU topology, interrupt controller setup, PSCI behavior, memory map,
-  and reserved carve-outs must be read from fogos firmware and checked on the
-  actual device.
-- The framebuffer, panel mode, touch controller and power rails need fogos
-  device-tree and runtime data. The existing Goodix/GENI, SPMI and framebuffer
-  drivers contain sweet-specific addresses and assumptions.
-- UFS controller registers, DMA constraints, partition layout and bootloader
-  handoff need independent confirmation before a storage driver can be used.
+  and reserved carve-outs must be reconciled between the live FDT, vendor DTB,
+  DTBO selection, and XBL memory map.
+- The active panel and touch-controller identities are known, but XNU still
+  needs a fogos framebuffer/display path, touch input path, and correct power
+  sequencing. The existing Goodix/GENI, SPMI and framebuffer drivers assume
+  sweet hardware.
+- UFS controller registers, DMA constraints, partition layout, and bootloader
+  handoff need validation before a fogos UFS driver can be used.
 - Both phones are ARM64 Qualcomm devices, but that alone does not establish
   compatible page sizes, CPU features, boot protocol or XNU driver support.
 
 ## Bring-up sequence
 
-1. Identify the exact model/region and Android build; confirm the bootloader
-   can be unlocked. Keep a complete stock firmware package and device-specific
-   calibration partitions safe and outside git.
-2. Collect read-only hardware evidence: `fastboot getvar all` output with
-   serials redacted, `getprop` output, stock `boot.img`, DTB/DTBO, and kernel
-   source matching the installed firmware. Do not publish calibration dumps.
+1. Confirm the bootloader's real unlock state in fastboot and whether the
+   matching Motorola unlock process is available. Keep calibration partitions
+   safe and outside git.
+2. Identify the exact live DTBO selection and compare the active live tree
+   with the extracted stock DTB/DTBO. Obtain the Motorola kernel source for the
+   firmware build and map CPU, GIC, PSCI, RAM, reserved memory, UFS, display and
+   touch hardware.
 3. Add a fogos board target and ADT generator based on those artifacts. Keep
    the existing sweet defaults intact. Verify address ranges, RAM and reserved
    regions against the live DT before mapping hardware.
@@ -44,16 +87,8 @@ not fogos artifacts.
 5. Bring up storage read-only first, then display/input and only later an iOS
    root image. Any userdata erase requires a separate explicit confirmation.
 
-## Inputs needed to start target-specific implementation
-
-- Exact model number (for example XT2363-*) and region/carrier.
-- Android build number and whether OEM unlocking is enabled / bootloader is
-  unlocked.
-- A stock firmware `boot.img` and matching `dtbo.img`, or a complete firmware
-  package; do not send `persist`, modem calibration, or personal data.
-- Whether the phone is available for temporary `fastboot boot` testing and
-  whether a Linux PC is available for the documented build tools.
-
-No fogos kernel changes or boot images have been built yet. The current
-workspace only contains the public `ios-sweet` source checkout; `adb` and
-`fastboot` are not installed in this environment, and no phone is connected.
+No fogos kernel changes or boot images have been built yet. The phone and
+firmware are available locally. The next implementation gate is confirming
+whether the bootloader can accept a temporary `fastboot boot` image; the
+fastboot executable is present in the Android SDK, but the phone has not been
+rebooted to fastboot.

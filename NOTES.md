@@ -2,19 +2,35 @@
 
 ## New request: Moto G34 5G (`fogos`)
 
-User asked to port ios-sweet to their Moto G34 5G. This is a separate board
-port, not a reusable `sweet` image: public sources identify fogos as SM6375 /
-Snapdragon 695, while this repo targets sweet / SM7150 / Snapdragon 732G.
-See `docs/FOGOS_PORT.md` for a grounded first-pass plan and required inputs.
+User wants the linked ios-sweet XNU/iOS project ported to the Moto G34. The
+phone runs a ColorOS 16 port which spoofs its Android product identity as OPPO
+PLE110; the live tree and boot arguments identify the underlying hardware as
+Moto G34 `XT2363-1`, `fogos` / Qualcomm `blair`. Running ROM: Android 16,
+`PLE110_16.0.10.600(CN01)`. Stock firmware supplied locally: Android 15,
+`V1UGS35H.75-14-8-1-2`.
 
-At this milestone no target-specific kernel changes or image were built. ADB
-was located in the Android SDK and reports a connected **OPPO PLE110**
-(`OP5E03L1`, Android 16), not fogos. The serial was deliberately not recorded.
-`fastboot` is still not on PATH. Next, get the Moto G34's exact XT2363 variant
-and build plus matching stock `boot.img` + `dtbo.img` (or firmware package), or
-connect the Moto itself. Do not put calibration dumps in git. Keep the first
-bring-up temporary (`fastboot boot`) and storage read-only; obtain separate
-confirmation before any userdata erase or partition write.
+Read-only bring-up evidence: 8 cores (six Cortex-A55 MIDR `0xd05`, two
+Cortex-A78 MIDR `0xd41`); live panel `qcom,mdss_dsi_txd_ili9883c_6528_hd_plus_120_video`,
+720x1600@120; active touch node `tchip,ilitek` matched to `ili9883c`; live
+FDT boot args select `dtb_idx=0`, `dtbo_idx=0`. User-provided firmware folder:
+`C:\ProgramData\RSA\Download\RomFiles\FOGOS_G_V1UGS35H.75_14_8_1_2_subsidy_DEFAULT_regulatory_DEFAULT_cid50_CFC.xml`.
+Extracted the vendor_boot v3 DTB and both v0 DTBO entries to ignored `dtb/`.
+The live device tree was pulled to ignored `dtb/fogos-live-devicetree/` and
+`dtb/fogos-live-soc/`; these contain serial/MAC data and must not be committed.
+The matching XBL UEFI dump is at `C:\Users\Admin\Downloads\uefi\firmware-dumps`;
+its `uefiplat.cfg` gives UFS regs `0x04800000`, MDSS `0x05e00000`, GICD
+`0x0f200000`, GICR `0x0f240000`, SPMI `0x01c00000`.
+
+New reusable extractors: `tools/unpack_vendor_boot.py` and `tools/unpack_dtbo.py`.
+Both were run against the supplied firmware. `boot.img` header v3, vendor_boot
+header v3 (DTB at file offset `0xb4000`, size `323929`), DTBO has two entries.
+No XNU fogos kernel/image has been built. Next: reconcile memory/reserved
+regions, hardware DT and XBL map, then determine real bootloader state. ADB
+properties are inconsistent (`flash.locked=1`, `vbmeta.device_state=locked`,
+`verifiedbootstate=orange`); fastboot has not been entered. No reboot, unlock,
+flash, or erase was performed. The firmware's flashfile explicitly erases
+userdata; never execute its flashing script for this task.
+See `docs/FOGOS_PORT.md` for the longer handoff.
 
 ## Agent handoff / active work (2026-10-15, latest)
 
