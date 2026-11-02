@@ -323,3 +323,10 @@ locally; rebuild and device retest are pending.
 The next temporary boot used image `research/fogos-ci/run-41370878973/fogos-boot.img` (kernel run `41369743993`, package run `41370878973`). The user video/photo shows the previous SHA-1/corecrypto failure is past, followed by `Kernel data abort`, `ESR=0x96000005`, `FAR=0x150`, and `handshake structure not initialized`. Symbolizing the PC against the matching kernel maps it to `crypto_random_kmem_ctx_size`. The fault address matches the offset of the callback read from a NULL `g_crypto_funcs` table, consistent with corecrypto not being registered at early boot; this is an inference from source and the displayed fault address.
 
 Patches 0013 and 0014 previously enabled the allocator SplitMix64 fallback and the built-in HMAC-SHA256 PRNG only for SWEET. Their FOGOS guards are now widened to include FOGOS. This covers `kmem_crypto_init()` context sizing/initialization/generation, PRNG startup, and entropy hashing so early memory setup no longer calls the missing corecrypto provider. Build and hardware retest are pending. Continue using temporary `fastboot boot`; no partition writes are authorized or needed.
+
+
+## PRNG callback panic follow-up (2026-11-02)
+
+The boot using kernel run `41371376347` advanced beyond the allocator panic but faulted branching to address zero: `PC=0`, `ESR=0x86000005`, `FAR=0`, `LR=0xfffffe0007454af4`. The LR symbolizes as `read_random`; the instruction at LR-4 is `blr x8`, and x8 was loaded from `prng_funcs.refresh`. The kernel lacks the `sweet_prng_startup` symbol/registration string, so the built-in PRNG provider was not compiled into this FOGOS kernel.
+
+The patch guards tested `defined(FOGOS)`, but that macro is declared inside `FOGOS.h`; `prng_random.c` and `entropy.c` do not include that header. The globally supplied board-selection macro is `ARM64_BOARD_CONFIG_FOGOS`. Patches 0013/0014 now use `ARM64_BOARD_CONFIG_SWEET || ARM64_BOARD_CONFIG_FOGOS`; a fresh kernel build and packaging are required before another boot.

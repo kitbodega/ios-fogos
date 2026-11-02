@@ -1,3 +1,9 @@
+## Handoff update (2026-11-02: PRNG guard used the wrong FOGOS macro)
+
+The user reports the newly packaged kernel still panicked. Video `IMG_0286.MOV` shows a different failure: `PC=0`, `ESR=0x86000005`, `FAR=0`, `LR=0xfffffe0007454af4`. The matching kernel from run `41371376347` symbolizes LR as `_read_random`; disassembly shows `blr x8` immediately before LR, with x8 loaded from `prng_funcs.refresh`. Thus the allocator fallback got past the previous `crypto_random_kmem_ctx_size` panic, but `read_random()` called a NULL refresh callback. The kernel symbol/string table also lacks `sweet_prng_startup` / its registration log string.
+
+Root cause: the FOGOS guard in patch 0014 used `defined(FOGOS)`, but the `FOGOS` macro comes from `FOGOS.h`, which `prng_random.c` and `entropy.c` do not include. The actual globally supplied build macro is `ARM64_BOARD_CONFIG_FOGOS` (`MACHINE_FLAGS_ARM64_FOGOS`). Updated patches 0013/0014 to guard with `ARM64_BOARD_CONFIG_SWEET || ARM64_BOARD_CONFIG_FOGOS`, including the entropy exclusion. Next: rebuild, then package the exact kernel; do not use the prior image. No partition has been written.
+
 # iOS 16 on sweet (Redmi Note 10 Pro, SM7150) - working notes
 
 ## New request: Moto G34 5G (`fogos`)
@@ -6,7 +12,7 @@
 
 The user video `C:\Users\Admin\Downloads\IMG_0283.MOV` and accompanying panic photo show the latest `41370878973` image passes the previous SHA-1 failure, then panics during early kernel memory setup. The screen reports `Kernel data abort`, `ESR=0x96000005`, `FAR=0x150`, and `handshake structure not initialized`; the panic PC resolves against kernel `41369743993` to `crypto_random_kmem_ctx_size`. This is consistent with a NULL `g_crypto_funcs` dereference at field offset `0x150`; inference from the address and XNU source, not a captured register dump. `vm_kern.c::kmem_crypto_init()` was still calling that API because patches 0013 and 0014 enabled the no-corecrypto allocator/PRNG fallback for SWEET only.
 
-Widened the guards in patches 0013 and 0014 to `SWEET || FOGOS`, including kmem context sizing/init/generation, built-in HMAC-SHA256 PRNG registration, and entropy hashing. This reuses the tested SWEET path and avoids touching Apple targets. `tools/validate-repo.py` could not finish on this Windows console because CP1252 cannot print its checkmark; patch numbering/format checks ran before that encoding exception. Next: verify patch stack/build in GitHub Actions, package the exact resulting kernel, then ask the user to boot it with `fastboot boot` only. No partition has been written.
+Widened the guards in patches 0013 and 0014 to `SWEET || FOGOS`, including kmem context sizing/init/generation, built-in HMAC-SHA256 PRNG registration, and entropy hashing. This reuses the tested SWEET path and avoids touching Apple targets. `tools/validate-repo.py` could not finish on this Windows console because CP1252 cannot print its checkmark; patch numbering/format checks ran before that encoding exception. Kernel run `41371376347` compiled successfully per user report. Shim-only packaging was dispatched as run `41372221226`, with `kernel_run_id=41371376347`. User requested no further CI status checks to conserve usage. Artifact downloaded to `research/fogos-ci/run-41372221226/fogos-boot/fogos-boot.img`; image not booted yet. Give the user the temporary `fastboot boot` command. No partition has been written.
 
 ## Handoff update (2026-11-02: SHA-1 corecrypto provider panic isolated)
 
