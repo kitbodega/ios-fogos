@@ -281,12 +281,6 @@
 +	    error ? "NOT registered" : "registered", error);
 +}
  #endif /* ARM64_BOARD_CONFIG_SWEET || ARM64_BOARD_CONFIG_FOGOS */
---- a/iokit/conf/files.arm64
-+++ b/iokit/conf/files.arm64
-@@ -10,2 +10,3 @@
- iokit/Kernel/arm/SweetPlatformExpert.cpp                         optional iokitcpp
- iokit/Kernel/arm/FogosCPU.cpp                                    optional iokitcpp
-+iokit/Kernel/arm/SweetEntitlements.cpp                           optional iokitcpp
 --- /dev/null
 +++ b/iokit/Kernel/arm/SweetEntitlements.cpp
 @@ -0,0 +1,184 @@

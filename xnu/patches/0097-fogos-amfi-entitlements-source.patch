@@ -1,0 +1,5 @@
+--- a/iokit/conf/files.arm64
++++ b/iokit/conf/files.arm64
+@@ -11,1 +11,2 @@
+ iokit/Kernel/arm/FogosCPU.cpp                                    optional iokitcpp
++iokit/Kernel/arm/SweetEntitlements.cpp                           optional iokitcpp

@@ -1,3 +1,9 @@
+## Handoff correction (2026-11-02: AMFI source registration moved after FOGOS CPU patch)
+
+Kernel run `41540348442` completed successfully, but its log still showed 0035 skipped at `iokit/conf/files.arm64:10`, followed by 0036 and 0050 skipped. Root cause: patch 0018 is skipped in the FOGOS build, so the file list does not contain `SweetCPU.cpp` when 0035 runs; patch 0092 adds `FogosCPU.cpp` later. Removed the file-list hunk from 0035 so its AMFI changes can apply independently, and added final patch `0097-fogos-amfi-entitlements-source.patch` to register `SweetEntitlements.cpp` after 0092.
+
+On a fresh extracted source tree, 0035 now applies; 0036 and 0050 pass after it, and 0097 passes against the final FOGOS file-list context. Next: rebuild, inspect the log to confirm none of these patches are skipped, then package that exact kernel with `rd=ufsroot0 unentitled_ios_sim_launch=1`. No device partitions were written.
+
 ## Handoff correction (2026-11-02: AMFI patch context retry)
 
 Kernel run `41537521545` succeeded, but its log still showed 0035/0036/0050 skipped: the `files.arm64` context in 0035 included a SWEET/FOGOS comment that only appeared later in the patch series. Removed that comment from the context and narrowed the hunk to the stable `SweetPlatformExpert.cpp` and `FogosCPU.cpp` entries. On a fresh extraction of the run's buildtree, 0035 now applies; after it, 0036 and 0050 both pass `git apply --check`. Rebuild after this correction; confirm the CI log has no skips for these patches before packaging.
