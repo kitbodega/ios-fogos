@@ -1,18 +1,18 @@
-# Porting ios-sweet to Moto G34 5G (fogos)
+# ios-fogos: Moto G34 5G (fogos) XNU port
 
 ## Scope
 
-This is a separate hardware port of the XNU bring-up in this repository. The
-current `sweet` target is a Redmi Note 10 Pro with Snapdragon 732G (SM7150).
-Public device sources identify Moto G34 5G as `fogos` with Snapdragon 695
-(SM6375). Sharing Qualcomm/ARM architecture does not make the existing kernel
-image or board drivers compatible.
+This repository now focuses on the Motorola Moto G34 5G (`fogos`, Qualcomm
+SM6375 / Snapdragon 695). The XNU 8796 bring-up and some generic drivers came
+from the upstream [ios-sweet project](https://github.com/dipa-studio/ios-sweet),
+which targets a Redmi Note 10 Pro. Its kernel images and board-specific drivers
+are not compatible with FOGOS without porting.
 
-The first useful milestone is a temporary boot of a fogos-specific XNU image
-that prints diagnostics and does not write to phone storage. Reaching an iOS
-home screen comes much later: it also needs working storage, display, touch,
-and a compatible iOS root image. The existing `sweet` root image and ADT are
-not fogos artifacts.
+The FOGOS DEVELOPMENT kernel compiled in GitHub Actions run
+[`41405380749`](https://github.com/kitbodega/ios-fogos/actions/runs/41405380749),
+as reported by the user. Earlier diagnostic boots entered XNU and stopped after
+the platform expert registered. The new read-only UFS path has compiled but is
+not yet tested on the Moto. No iOS user interface is running yet.
 
 ## XNU build target (2026-11-01)
 
@@ -27,14 +27,13 @@ macros; `pexpert/pexpert/arm/protos.h` declares it and `osfmk/arm64/sleh.c`
 uses it in the Group-1 IRQ path, which FOGOS shares with SWEET. SWEET console
 output is unchanged.
 
-This is still a **compile-only scaffold**: it does not enable `SWEET` hardware
-code and does not implement a Fogos platform expert, CPU startup, PSCI, display,
-touch, UFS, or boot path. Only a `DEVELOPMENT` FOGOS build is attempted. The
-first one (`41359300884`) failed in `installhdrs` because the board header did
-not exist yet; the next one builds on that fix.
+The initial FOGOS target was a compile-only scaffold. Subsequent patches added
+the board expert, early console, diagnostics, and a read-only UFS root path.
+FOGOS CPU startup, controller power-up/recovery, display, touch, and the full
+iOS boot remain unfinished.
 
 The first successful compile/link is CI run
-[`41363602897`](https://github.com/kitbodega/ios-sweet/actions/runs/41363602897)
+[`41363602897`](https://github.com/kitbodega/ios-fogos/actions/runs/41363602897)
 on commit `b872f73ba5a499a0015cdba39570030d286ee0c1`. It produced
 `kernel.development.fogos`, a Mach-O arm64 executable (16,970,816 bytes;
 SHA-256 `b3ba78bb006119e58d74a729c6993af2f07af8ff283c54dc774303d8e7e185b0`).
@@ -89,8 +88,8 @@ brownout. `xnu.yml` runs on `macos-15` and selects its oldest Xcode (16.0).
 Whether Xcode 16's `iig` output is usable for xnu-8796 is still unverified: the
 first macos-15 run died before reaching it.
 
-Because the connected GitHub account (`kitbodega`) lacks write access to
-`dipa-studio/ios-sweet`, builds run from the fork `kitbodega/ios-sweet`
+The GitHub fork is now named `kitbodega/ios-fogos`; its upstream remains
+`dipa-studio/ios-sweet`. Builds run from the renamed fork
 (Actions must be enabled there once with
 `PUT /repos/<owner>/<repo>/actions/permissions`).
 
@@ -102,12 +101,12 @@ compile commands locally from the `xnu-buildtree` artifact.
 
 ```
 # one CI build (8-15 min, mostly queue); keep_going=true lists many errors
-gh workflow run xnu.yml --repo kitbodega/ios-sweet --ref fogos-port-init \
+gh workflow run xnu.yml --repo kitbodega/ios-fogos --ref fogos-port-init \
   -f machine_config=FOGOS -f kernel_config=DEVELOPMENT -f keep_going=true
 
 # log + artifact
-gh run view <id> --repo kitbodega/ios-sweet --log > research/fogos-ci/run-<id>.log
-gh run download <id> --repo kitbodega/ios-sweet -n xnu-buildtree -D research/fogos-ci
+gh run view <id> --repo kitbodega/ios-fogos --log > research/fogos-ci/run-<id>.log
+gh run download <id> --repo kitbodega/ios-fogos -n xnu-buildtree -D research/fogos-ci
 
 # WSL: syntax-check the sources whose compile command contains a filter string
 cd /mnt/c/Users/Admin/Downloads/ios-sweet

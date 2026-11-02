@@ -4,7 +4,7 @@ Added patch `0088-fogos-ufs-readonly.patch`. It enables the existing UFSHCI/GPT 
 
 Added optional boot arg `fogos-ufs-probe=1`: calls the read-only driver to inspect the `userdata` GPT partition and reports `FOGOS UFS: read-only probe returned ...`, then continues normal root selection. The workflow now accepts a `boot_args` input so a diagnostic boot image can be packaged without selecting UFS as root. ADT generation and a `--dump` review show the new node with the expected compatible/address. Local XNU compile check via `tools/xnu-cc.py` passed for `bsd/dev/sweet_ufs.c` and `iokit/bsddev/IOKitBSDInit.cpp` (0/2 failed); patch reverse/apply dry run passed against the available 0083 buildtree.
 
-This is an untested-on-device handoff-reuse implementation, not full Qualcomm power-up/link recovery. No kernel CI build or Moto boot has been done for patch 0088 yet. The prepared iOS root image remains only in WSL ext4; Android userdata is still untouched. Do not use `rd=ufsroot0` until a separately confirmed operation puts the root image on userdata. Next: commit/push, dispatch FOGOS DEVELOPMENT kernel build, then package with `boot_args='debug=0xc serial=3 cpus=1 keepsyms=1 fogos-ufs-probe=1'` for a non-destructive phone test.
+This is an untested-on-device handoff-reuse implementation, not full Qualcomm power-up/link recovery. The user reports FOGOS DEVELOPMENT kernel run `41405380749` compiled successfully on the UFS patch commit `de6984c`; no hardware boot with this kernel has been reported. The fork was renamed from `kitbodega/ios-sweet` to `kitbodega/ios-fogos`; local remote `fork` now points at the new URL, while `origin` remains the upstream `dipa-studio/ios-sweet`. User-facing docs, workflow artifact source, and project metadata now use ios-fogos. Updated the board expert's runtime log prefix to FOGOS and made UFS diagnostics use the generic `UFS` prefix; the next kernel build is required to see those string changes on the phone. The prepared iOS root image remains only in WSL ext4; Android userdata is still untouched. Do not use `rd=ufsroot0` until a separately confirmed operation puts the root image on userdata. Next: build the renamed source and package with `boot_args='debug=0xc serial=3 cpus=1 keepsyms=1 fogos-ufs-probe=1'` for a non-destructive phone test.
 
 ## Handoff update (2026-11-02: diagnostic boot markers all return)
 
@@ -18,7 +18,7 @@ The user's latest close photo confirms the last visible lines are `SWEET: starti
 ## Handoff update (2026-11-02: FOGOS platform expert starts)
 
 User booted `research/fogos-ci/run-41392751804/fogos-boot.img` with temporary `fastboot boot`. Their screenshot shows `Platform: trust caches unavailable (Image4/AMFI not installed)`, then `No POST boot-arg set`, `SWEET: starting device-tree platform expert`, and `SWEET: platform expert registered`. The prior `Unable to find driver for this platform: D22AP` panic is gone; the platform expert's `start()` returned successfully. The photo contains no new panic. It ends immediately after registration, so whether XNU is stalled or merely quiet is undetermined. Next: request a new screen observation after allowing startup time or a photo/video if it remains unchanged; identify the next panic or last progress point. No partition writes. Latest platform expert source commit `3f773be`; build run `41391957496`; shim package `41392751804`.
-Build dispatched: run `41391957496` on commit `3f773be` in `kitbodega/ios-sweet`, with `machine_config=FOGOS`, DEVELOPMENT. The first dispatch targeted upstream `dipa-studio/ios-sweet` and was rejected (HTTP 403, repository admin required); rerun against the fork succeeded. Do not poll Actions; wait for the user to report completion. If successful, package this exact kernel through shim-only and let the user boot it temporarily. No partition writes.
+Build dispatched: run `41391957496` on commit `3f773be` in `kitbodega/ios-fogos`, with `machine_config=FOGOS`, DEVELOPMENT. The first dispatch targeted upstream `dipa-studio/ios-sweet` and was rejected (HTTP 403, repository admin required); rerun against the fork succeeded. Do not poll Actions; wait for the user to report completion. If successful, package this exact kernel through shim-only and let the user boot it temporarily. No partition writes.
 ## Handoff update (2026-11-02: FOGOS platform expert matching)
 
 The latest user screenshot shows XNU passes the trust-cache initialization and panics at `IOPlatformExpert.cpp:2319`: `Unable to find driver for this platform: "D22AP"`. The FOGOS ADT intentionally reports Apple/iPhone identity D22AP/iPhone10,3, while the only custom IOPlatformExpert personality in patch 0016 matched SWEET's `xiaomi,sweet`; additionally, `SweetPlatformExpert.cpp` compiled only under SWEET. Updated patch 0016 with a FOGOS-only `D22AP` personality and widened the implementation guard to SWEET/FOGOS. Updated patch 0059 so the FOGOS configuration retains the iOS ADT-based hw target/product identity. Next: commit, push, and dispatch a FOGOS DEVELOPMENT kernel build; await user report, with no Actions polling. No phone partitions written.
@@ -190,9 +190,9 @@ region output on the next temporary attempt.
 ### Handoff update (2026-11-01, evening: first FOGOS build reaches the compiler path)
 
 **Push unblocked:** `kitbodega` has only `pull` on `dipa-studio/ios-sweet` and the
-push is rejected 403. Created the fork `kitbodega/ios-sweet` (public, same as
+push is rejected 403. Created the fork `kitbodega/ios-fogos` (public, same as
 upstream), pushed `fogos-port-init` there and enabled Actions with
-`PUT /repos/kitbodega/ios-sweet/actions/permissions` (a fresh fork reports
+`PUT /repos/kitbodega/ios-fogos/actions/permissions` (a fresh fork reports
 "actions disabled" until that call; `gh workflow run` fails with
 "workflow not found on the default branch" before it). Remote `fork` is the
 push target; `origin` stays `dipa-studio`.

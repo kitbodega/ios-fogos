@@ -1,10 +1,13 @@
-# XNU for sweet
+# XNU build for ios-fogos
 
-Built on GitHub's macOS arm64 runners by `.github/workflows/xnu.yml`, using
-[blacktop/darwin-xnu-build](https://github.com/blacktop/darwin-xnu-build) (MIT) at a pinned commit.
+GitHub Actions builds the XNU 8796 kernel for the Moto G34 5G (`FOGOS`) with the `.github/workflows/xnu.yml` workflow. It uses [blacktop/darwin-xnu-build](https://github.com/blacktop/darwin-xnu-build) at a pinned commit and applies `patches/*.patch` in order.
 
-- `MACOS_VERSION=13.5` -> xnu-8796 (same generation as iOS 16.6/16.7, the last iOS for iPhone 8).
-- `patches/*.patch` are copied into the build script's patch dir and applied to the xnu tree with `git apply`.
-- Output: `kernel.<config>.vmapple` (later: our own SWEET machine config) as a workflow artifact.
+The compile run reported by the user: [41405380749](https://github.com/kitbodega/ios-fogos/actions/runs/41405380749). The matching artifact is `kernel.development.fogos`.
 
-Fetch the latest build: `gh run download -R dipa-studio/ios-sweet -n xnu-kernel -D xnu/out`
+Download a kernel artifact:
+
+```sh
+gh run download RUN_ID -R kitbodega/ios-fogos -n xnu-kernel -D xnu/out
+```
+
+The fork descends from [dipa-studio/ios-sweet](https://github.com/dipa-studio/ios-sweet); Sweet board support remains in the source tree for shared code and historical context.

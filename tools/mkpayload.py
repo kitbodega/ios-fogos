@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Pack an xnu kernel Mach-O + ADT into the payload the sweet shim boots.
+"""Pack an XNU kernel Mach-O + ADT into a SWEET or FOGOS shim payload.
 
   mkpayload.py KERNEL ADT OUT [--cmdline "..."] [--ramdisk IMAGE] [--fogos]
 

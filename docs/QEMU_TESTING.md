@@ -1,12 +1,15 @@
-# QEMU Emulation & Testing Guide for ios-sweet
+# QEMU Testing Guide for ios-fogos XNU Changes
 
-This document explains how to test the patched Apple XNU kernel for the Redmi Note 10 Pro (`sweet`, SM7150) in QEMU virtual machine without touching physical hardware or risking device user data.
+This guide covers QEMU checks for XNU code shared with the FOGOS port. The
+existing `tools/qemu-sweet.py` helper boots a `SWEETXNU` payload on QEMU's
+generic `virt` board; it does **not** emulate the Moto G34, its SM6375 UFS host,
+or the FOGOS ADT. Passing these checks says nothing about FOGOS hardware bring-up.
 
 ---
 
 ## 1. Overview
 
-`tools/qemu-sweet.py` emulates the bare-metal boot shim loader on your host system:
+`tools/qemu-sweet.py` emulates the shared bare-metal shim path on your host:
 - It configures `qemu-system-aarch64` on the `virt` board with `gic-version=3` and CPU `cortex-a76` (matching the Kryo 470 Gold cores' `ID_AA64MMFR0` architecture).
 - It covers the physical memory layout (framebuffer at `0x9c000000`, kernel base at `0xb0000000`).
 - It extracts the visual 1080×2400 framebuffer into `fb.png`, captures registers into `regs.txt`, and logs exception interrupts into `qemu.log`.

@@ -21,7 +21,7 @@ on:
         default: false
       kernel_run_id:
         description: successful FOGOS kernel workflow run whose artifact to package
-        default: "41363602897"
+        default: "41405380749"
       boot_args:
         description: kernel boot arguments (add fogos-ufs-probe=1 for the read-only UFS probe)
         default: "debug=0xc serial=3 cpus=1 keepsyms=1"
@@ -61,8 +61,8 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: xnu-kernel
-          repository: kitbodega/ios-sweet
-          run-id: ${{ inputs.kernel_run_id || '41363602897' }}
+          repository: kitbodega/ios-fogos
+          run-id: ${{ inputs.kernel_run_id || '41405380749' }}
           github-token: ${{ github.token }}
           path: research/fogos-ci/kernel
       - name: Create FOGOS ADT and payload
