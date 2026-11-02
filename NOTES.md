@@ -5,6 +5,9 @@ Per user request, changed XNU build runner back to `macos-15-intel` in commit
 dispatched replacement FOGOS DEVELOPMENT build `41427529247` on
 `macos-15-intel`. The fix is patch `0094` from commit `8f0c73d`. Wait for user
 to report build completion; do not poll. No device partitions were written.
+User reports build complete. Dispatched shim-only package run `41431133551`
+using kernel run `41427529247` with `debug=0xc serial=3 cpus=1 keepsyms=1
+fogos-ufs-probe=1`. Wait for the user's package completion report; do not poll.
 
 ## Handoff update (2026-11-02: pthread FOGOS guard lacked board-config include)
 
