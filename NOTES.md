@@ -6,8 +6,9 @@ already has `main` as its default branch; remote `main` was an ancestor of
 the current FOGOS commit, preserving history. The `fogos-port-init` remote ref
 is kept temporarily because kernel build run `41432190971` was dispatched from
 it and is still awaiting the user's completion report. Local branch naming is
-being aligned to `main`, while upstream `origin/main` is kept as
-`upstream-main`. No changes to device partitions.
+now aligned: local `main` tracks `fork/main`, and local `upstream-main` tracks
+the original `origin/main`. Promotion commit is `447b588`. No changes to device
+partitions.
 
 ## Handoff update (2026-11-02: pthread fix package downloaded; fastboot USB failed)
 
