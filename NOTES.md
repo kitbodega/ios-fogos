@@ -1,3 +1,7 @@
+## Handoff update (2026-11-02: VM/kperf image booted temporarily)
+
+After the user clarified that the phone was already in fastboot, successfully ran `fastboot boot research/fogos-ci/run-41415658320/fogos-boot/fogos-boot.img`. Fastboot reported `Sending 'boot.img' OKAY` and `Booting OKAY` (8.6 s). This is a temporary boot only; no partitions were flashed or written. Await the next screen photo/logs, especially `FOGOS: vm_set_restrictions begin/returned` and `FOGOS: kperf_init_early begin/returned`.
+
 ## Handoff update (2026-11-02: boot retry still cannot see phone)
 
 On the user's `boot` request, retried `adb reboot bootloader` with Platform Tools. It restarted the adb daemon due to version 40/41 mismatch, then returned `no devices/emulators found`; the chain stopped before calling fastboot. The image from run `41415658320` remains downloaded and ready. No image was sent and no device partitions were touched. Resume once the phone appears in `adb devices` as `device` (not absent/unauthorized).
