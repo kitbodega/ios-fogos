@@ -10,6 +10,10 @@ On the user's `boot` request, retried `adb reboot bootloader` with Platform Tool
 
 Downloaded `fogos-boot.img` from packaging run `41415658320` to `research/fogos-ci/run-41415658320/fogos-boot/fogos-boot.img`. Attempted `adb reboot bootloader` with local Platform Tools; it returned `no devices/emulators found`. Direct `fastboot boot` waited for a device and was canceled before sending anything. Retried with Motorola RSA's bundled ADB; it reported adb server/client version mismatch (41 vs 40), restarted the server, and still found no devices. No boot image was sent and no partition was written. Need the USB device to enumerate to ADB (authorize USB debugging / reconnect cable or port); once `adb devices` shows `device`, reboot to bootloader and run the downloaded image with `fastboot boot`.
 
+## Handoff update (2026-11-02: kperf waits for CPU topology publication)
+
+The photo from run `41415658320` shows `vm_set_restrictions begin/returned`, then `kperf_init_early begin`, with no return. In this XNU source, `kperf_init_early()` immediately calls `ml_wait_max_cpus()`, which sleeps until some CPU/interrupt-controller path calls `ml_set_max_cpus()`. The current FOGOS board path reaches `StartIOKitMatching` but has not demonstrated a CPU driver publishing this state; the existing `SweetCPU` PSCI bring-up is SWEET-scoped and not yet integrated for FOGOS. This is the leading explanation for the stall; do not bypass the wait by faking CPU readiness. Next work is to integrate a FOGOS-safe boot-CPU/interrupt-controller path (initially honoring `cpus=1`) so it can publish the CPU topology correctly. UFS/root selection has not been reached. No partitions written.
+
 ## Handoff update (2026-11-02: VM/kperf diagnostic package queued)
 
 The user reports diagnostic kernel run `41414484989` built successfully. Dispatched shim-only packaging run `41415658320` with read-only UFS probe arguments. Do not poll Actions. When the user reports packaging complete, download `fogos-boot` and use temporary `fastboot boot`; no partitions written.
