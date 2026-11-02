@@ -1,3 +1,4 @@
+Diagnostic kernel build run `41393303258` dispatched on commit `b5079a5` with `machine_config=FOGOS`, DEVELOPMENT. Do not poll; wait for user to report completion. If successful, package exact kernel and temporary-boot it. No partition writes.
 ## Handoff update (2026-11-02: FOGOS stops after platform expert registration)
 
 The user's latest close photo confirms the last visible lines are `SWEET: starting device-tree platform expert` and `SWEET: platform expert registered`; the only other visible indicator is a small solid green rectangle near the lower screen. There is no panic text or new register dump. The custom platform expert's `start()` completed, but the exact next stalled stage is unknown. Added a pending diagnostic patch 0087 to IOStartIOKit for FOGOS-only markers around root nub init/attach, ConfigureIOKit, and StartIOKitMatching. Next: commit/push and dispatch a FOGOS DEVELOPMENT kernel build so the next boot pinpoints the stage. The `SWEET` prefix comes from the reused class name; it does not mean the phone is SWEET. No partition writes.
@@ -771,6 +772,7 @@ Frame review of `IMG_0294.MOV` confirms `read_random()` faults at the indirect `
 ## Handoff update (2026-11-02: 0014 PRNG patch hunk counts fixed)
 
 Review of `IMG_0301.MOV` shows the scrolling panic console works: the final screen retains the full dump, but panic remains PC 0, LR `0xfffffe0007454af4`, ESR `0x86000005`, FAR 0. Downloaded matching kernel from run `41385827184`; disassembly of `_read_random` still unconditionally calls the NULL `prng_funcs.refresh`. Its buildtree `osfmk/prng/prng_random.c` is the unpatched upstream text. Root cause: patch 0014 had malformed hunk counts (startup addition declared +140, actual +141; early `read_random` hunk declared +10, actual +11), so patch application discarded it. Corrected counts and new hunk offsets in commit `984b39c`; kernel build run `41388733349` reported complete by user. Shim-only packaging dispatched as run `41389580376` with that exact kernel ID. Do not use older kernels. User prefers no polling.
+
 
 
 
