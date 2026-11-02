@@ -15,6 +15,10 @@ on:
       keep_going:
         description: make -k (collect all compile errors in one run)
         default: "true"
+      shim_only:
+        description: build only the Linux FOGOS shim artifact
+        type: boolean
+        default: false
   push:
     branches: [main]
     paths:
@@ -33,7 +37,27 @@ env:
   MACHINE_CONFIG: ${{ inputs.machine_config || 'SWEET' }}
 
 jobs:
+  fogos-shim:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install AArch64 build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu cpio
+      - name: Build no-framebuffer FOGOS shim
+        run: bash shim/build.sh --fogos
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fogos-shim
+          path: |
+            shim/out/Image
+            shim/out/shim.elf
+          retention-days: 14
+
   build:
+    if: ${{ inputs.shim_only != true }}
     # macos-14 (the only image with Xcode 15.x, whose iig matched the xnu-8796
     # IORPC ABI) is retired on 2026-11-02. macos-15 ships Xcode 16.0-16.4 and
     # 26.x only; the oldest Xcode is selected below and the iig output is
