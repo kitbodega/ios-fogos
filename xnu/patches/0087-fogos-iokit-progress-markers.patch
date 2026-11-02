@@ -1,0 +1,62 @@
+diff --git a/iokit/Kernel/IOStartIOKit.cpp b/iokit/Kernel/IOStartIOKit.cpp
+--- a/iokit/Kernel/IOStartIOKit.cpp
++++ b/iokit/Kernel/IOStartIOKit.cpp
+@@ -152,15 +152,30 @@
+ 
+ 	interruptAccountingInit();
+ 
++#if defined(ARM64_BOARD_CONFIG_FOGOS)
++	IOLog("FOGOS: InitIOKit begin\n");
++#endif
+ 	gRootNub = new IOPlatformExpertDevice;
+ 	if (__improbable(gRootNub == NULL)) {
+ 		panic("Failed to allocate IOKit root nub");
+ 	}
++#if defined(ARM64_BOARD_CONFIG_FOGOS)
++	IOLog("FOGOS: root nub init begin\n");
++#endif
+ 	bool ok = gRootNub->init(dtTop);
++#if defined(ARM64_BOARD_CONFIG_FOGOS)
++	IOLog("FOGOS: root nub init returned %d\n", ok);
++#endif
+ 	if (__improbable(!ok)) {
+ 		panic("Failed to initialize IOKit root nub");
+ 	}
++#if defined(ARM64_BOARD_CONFIG_FOGOS)
++	IOLog("FOGOS: root nub attach begin\n");
++#endif
+ 	gRootNub->attach(NULL);
++#if defined(ARM64_BOARD_CONFIG_FOGOS)
++	IOLog("FOGOS: root nub attach returned\n");
++#endif
+ 
+ 	/* If the bootstrap segment set up a function to record startup
+ 	 * extensions, call it now.
+@@ -174,7 +189,13 @@
+ ConfigureIOKit(void)
+ {
+ 	assert(gRootNub != NULL);
++#if defined(ARM64_BOARD_CONFIG_FOGOS)
++	IOLog("FOGOS: ConfigureIOKit begin\n");
++#endif
+ 	gRootNub->configureDefaults();
++#if defined(ARM64_BOARD_CONFIG_FOGOS)
++	IOLog("FOGOS: ConfigureIOKit returned\n");
++#endif
+ }
+ 
+ void
+@@ -182,7 +203,13 @@
+ {
+ 	SOCD_TRACE_XNU(START_IOKIT);
+ 	assert(gRootNub != NULL);
++#if defined(ARM64_BOARD_CONFIG_FOGOS)
++	IOLog("FOGOS: IOKit matching begin\n");
++#endif
+ 	bool ok = gRootNub->startIOServiceMatching();
++#if defined(ARM64_BOARD_CONFIG_FOGOS)
++	IOLog("FOGOS: IOKit matching returned %d\n", ok);
++#endif
+ 	if (__improbable(!ok)) {
+ 		panic("Failed to start IOService matching");
+ 	}
