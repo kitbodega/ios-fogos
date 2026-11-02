@@ -1,3 +1,14 @@
+## Handoff update (2026-11-02: read-only root-selection image booted)
+
+User reports shim-only package run `41500341017` complete. Downloaded
+`research/fogos-ci/run-41500341017/fogos-boot/fogos-boot.img`; it uses kernel
+run `41496489308` with `debug=0xc serial=3 cpus=1 keepsyms=1 rd=ufsroot0`.
+Fastboot device `ZY32JNZ8K2` accepted temporary `fastboot boot`: sending OKAY,
+booting OKAY (10.922 s total). This image keeps FOGOS UFS read-only; no
+partitions were written. Await screen photo/result to see whether BSD root
+selection reaches `mountroot` and what filesystem error, if any, follows. Do
+not reboot before the user reports the current screen.
+
 ## Handoff update (2026-11-02: root-selection package queued)
 
 The prior boot used `fogos-ufs-probe=1`, which only probes/registers UFS and
