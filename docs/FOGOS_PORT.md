@@ -316,3 +316,10 @@ registered at this point; its BearSSL fallback was guarded for SWEET alone.
 Widened the built-in portable crypto paths (SHA-1, SHA-256, MD5, SHA-384/512,
 AES-CBC) and BearSSL wrapper guards to FOGOS. Patches 0032-0033 were checked
 locally; rebuild and device retest are pending.
+
+
+## Early allocator RNG panic (2026-11-02)
+
+The next temporary boot used image `research/fogos-ci/run-41370878973/fogos-boot.img` (kernel run `41369743993`, package run `41370878973`). The user video/photo shows the previous SHA-1/corecrypto failure is past, followed by `Kernel data abort`, `ESR=0x96000005`, `FAR=0x150`, and `handshake structure not initialized`. Symbolizing the PC against the matching kernel maps it to `crypto_random_kmem_ctx_size`. The fault address matches the offset of the callback read from a NULL `g_crypto_funcs` table, consistent with corecrypto not being registered at early boot; this is an inference from source and the displayed fault address.
+
+Patches 0013 and 0014 previously enabled the allocator SplitMix64 fallback and the built-in HMAC-SHA256 PRNG only for SWEET. Their FOGOS guards are now widened to include FOGOS. This covers `kmem_crypto_init()` context sizing/initialization/generation, PRNG startup, and entropy hashing so early memory setup no longer calls the missing corecrypto provider. Build and hardware retest are pending. Continue using temporary `fastboot boot`; no partition writes are authorized or needed.
