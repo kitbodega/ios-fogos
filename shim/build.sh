@@ -5,6 +5,15 @@ cd "$(dirname "$0")"
 CC=aarch64-linux-gnu-gcc
 OBJCOPY=aarch64-linux-gnu-objcopy
 CFLAGS="-O2 -ffreestanding -nostdlib -fno-pic -mgeneral-regs-only -mstrict-align -fno-stack-protector -Wall -Wextra"
+PROFILE=sweet
+PAYLOAD=
+if [ "${1:-}" = "--fogos" ]; then
+	PROFILE=fogos
+	PAYLOAD=${2:-}
+else
+	PAYLOAD=${1:-}
+fi
+if [ "$PROFILE" = fogos ]; then CFLAGS="$CFLAGS -DFOGOS"; fi
 mkdir -p out
 for f in start.S shim.c console.c mmu.c fdt.c loader.c ufs.c; do
 	$CC $CFLAGS -c $f -o out/${f%.*}.o
@@ -21,10 +30,15 @@ size=$(aarch64-linux-gnu-nm out/shim.elf | awk '$3=="_end"{print strtonum("0x"$1
 truncate -s "$size" out/Image
 # Ramdisk: an xnu payload (tools/mkpayload.py) if given as $1, else an empty
 # newc cpio (ABL dislikes a zero-size ramdisk on some builds) -> diagnostics.
-if [ -n "${1:-}" ]; then
-	cp "$1" out/ramdisk.bin
+if [ -n "$PAYLOAD" ]; then
+	cp "$PAYLOAD" out/ramdisk.bin
 else
 	(cd out && rm -rf rd && mkdir rd && cd rd && find . | cpio -o -H newc --quiet | gzip -9 > ../ramdisk.bin)
+fi
+if [ "$PROFILE" = fogos ]; then
+	echo "Built FOGOS shim Image only. Package with a Moto-compatible v3 boot/vendor_boot flow after handoff audit."
+	ls -l out/Image
+	exit 0
 fi
 mkbootimg --header_version 2 --kernel out/Image --ramdisk out/ramdisk.bin \
 	--dtb ../dtb/boot_unpacked/dtb --base 0 --kernel_offset 0x8000 --ramdisk_offset 0x1000000 \

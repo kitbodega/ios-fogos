@@ -11,10 +11,25 @@
 #define MARGIN		24
 #define LABEL_COLS	8
 
+#ifndef FOGOS
 volatile uint32_t *con_fb = (volatile uint32_t *)FB_BASE;
 static uint32_t con_bg;
 static int row;
+#endif
 
+#ifdef FOGOS
+/* No FOGOS framebuffer has been identified. Keep all console operations
+ * inert until a real display mapping is discovered and validated.
+ */
+void con_clear(uint32_t bg) { (void)bg; }
+void con_skip(void) {}
+void con_str(const char *label, const char *s) { (void)label; (void)s; }
+void con_hex(const char *label, uint64_t v) { (void)label; (void)v; }
+void con_hex2(const char *label, const char *a, uint32_t va, const char *b, uint32_t vb)
+{
+	(void)label; (void)a; (void)va; (void)b; (void)vb;
+}
+#else
 void con_clear(uint32_t bg)
 {
 	for (int y = 0; y < FB_H; y++) {
@@ -95,3 +110,4 @@ void con_hex2(const char *label, const char *a, uint32_t va, const char *b, uint
 	}
 	row++;
 }
+#endif

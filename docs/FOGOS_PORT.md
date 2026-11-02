@@ -239,8 +239,17 @@ sequencing and protocol study and must be reimplemented for XNU.
    root image. Any userdata erase requires a separate explicit confirmation.
 
 The FOGOS kernel has compiled and linked, and ADT v1 has been generated and
-parsed locally. No FOGOS boot image exists and the phone has not been booted
-with XNU. The current shim's `boot_args.Video` still points at SWEET's
-framebuffer, so it must not be used with this ADT. The next implementation
-gate is a no-framebuffer shim plus verifying the actual initrd/RAM handoff;
-the phone has not been rebooted to fastboot.
+parsed locally. The shim now has a compile-time FOGOS profile: console writes
+are inert, its SWEET UFS probe and diagnostics are skipped, failed payload
+lookup parks the CPU, and a `FOGOSXNU` payload leaves `boot_args.Video` zero.
+`tools/mkpayload.py --fogos` writes that marker while preserving the SWEET
+default. `shim/build.sh --fogos [payload]` builds only the shim Image; it
+deliberately does not package it into a boot image because the Moto v3
+boot/vendor_boot handoff has not yet been audited. The six C translation units
+compile cleanly with WSL Clang targeting `aarch64-none-elf` and `-Werror`; the
+existing FOGOS kernel plus ADT also produced a 16,357,216-byte test payload
+whose marker was verified. The local environment lacks the configured GNU
+cross-linker and `mkbootimg`, so the shim ELF/Image and boot image have not
+been linked or packaged. No device boot was attempted. Next: cross-link with
+the project toolchain in CI, audit the actual initrd/RAM handoff and
+vendor_boot use, then package only after those checks.

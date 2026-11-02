@@ -278,7 +278,7 @@ static void irq_window(const char *label, uintptr_t r, int src)
 	con_hex2(" pre", "tctl=", ist, "last=", irq_last);
 }
 
-static void test_gic(void)
+static void __attribute__((unused)) test_gic(void)
 {
 	stage = "gic sre";
 	uint64_t sre = rsr("icc_sre_el1");
@@ -349,14 +349,14 @@ static void __attribute__((unused)) psci_line(const char *label, uint64_t fn)
 
 static uint64_t scratch[8192];	/* 64KB, lives in our (later cacheable) image */
 
-static uint64_t ticks_fill(uint32_t c)
+static uint64_t __attribute__((unused)) ticks_fill(uint32_t c)
 {
 	uint64_t t = now();
 	con_clear(c);
 	return now() - t;
 }
 
-static uint64_t ticks_mem(void)
+static uint64_t __attribute__((unused)) ticks_mem(void)
 {
 	uint64_t t = now();
 	for (int pass = 0; pass < 16; pass++)
@@ -365,15 +365,24 @@ static uint64_t ticks_mem(void)
 	return now() - t;
 }
 
-static uint32_t to_us(uint64_t ticks)
+static uint32_t __attribute__((unused)) to_us(uint64_t ticks)
 {
 	return ticks * 10 / 192;	/* 19.2 MHz */
 }
 
 void shim_main(uint64_t dtb)
 {
+#ifdef FOGOS
+	/* FOGOS profile: no SWEET framebuffer, UFS probe, or SWEET diagnostics.
+	 * A failed payload lookup parks safely instead of touching board hardware.
+	 */
+	stage = "fogos loader";
+	const char *why = loader_boot(dtb);
+	(void)why;
+	for (;;)
+		__asm__ volatile("wfe");
+#else
 	struct mmu_info mi;
-
 	/* An xnu payload in the ramdisk means: boot it (MMU stays off). */
 	stage = "loader";
 	con_clear(RED);
@@ -432,4 +441,5 @@ void shim_main(uint64_t dtb)
 
 	stage = "done";
 	reset(40);
+#endif
 }

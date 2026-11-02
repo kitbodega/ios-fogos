@@ -74,6 +74,20 @@ the initrd's physical address must be checked against the chosen RAM bank. Do
 not boot it with the current shim. Next: add a no-framebuffer shim profile and
 audit the Android boot/vendor_boot v3 handoff; keep stock partitions intact.
 
+**FOGOS shim profile prepared:** `shim/build.sh --fogos [payload]` compiles
+with inert console calls and skips SWEET's UFS probe and diagnostics; a failed
+payload lookup parks the CPU. The payload tool accepts `--fogos` and stamps
+`FOGOSXNU`, which makes the shim leave `boot_args.Video` zero. The SWEET
+default remains unchanged. It intentionally builds only the shim `Image`, not
+a boot image: vendor_boot v3 integration and actual initrd placement have not
+been audited. All six C translation units compile cleanly with WSL Clang
+targeting `aarch64-none-elf` and `-Werror`; the existing FOGOS kernel and ADT
+also produced a 16,357,216-byte test payload with the expected marker. The
+local WSL lacks the configured GNU cross-linker and `mkbootimg`, so the shim
+ELF/Image and boot image are not built. Next: cross-link in CI, audit real
+handoff and vendor_boot use, then package only after those checks. No device
+boot was attempted.
+
 ### Handoff update (2026-11-01, evening: first FOGOS build reaches the compiler path)
 
 **Push unblocked:** `kitbodega` has only `pull` on `dipa-studio/ios-sweet` and the
