@@ -1,3 +1,14 @@
+## Handoff update (2026-11-02: FOGOS branch promoted to main)
+
+User requested that the FOGOS development line become `main`. The GitHub repo
+already has `main` as its default branch; remote `main` was an ancestor of
+`fogos-port-init`. Promoted the FOGOS line by fast-forwarding `fork/main` to
+the current FOGOS commit, preserving history. The `fogos-port-init` remote ref
+is kept temporarily because kernel build run `41432190971` was dispatched from
+it and is still awaiting the user's completion report. Local branch naming is
+being aligned to `main`, while upstream `origin/main` is kept as
+`upstream-main`. No changes to device partitions.
+
 ## Handoff update (2026-11-02: pthread fix package downloaded; fastboot USB failed)
 
 User reported shim package run `41431133551` complete. Downloaded its artifact
