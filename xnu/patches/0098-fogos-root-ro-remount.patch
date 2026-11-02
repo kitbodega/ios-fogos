@@ -1,0 +1,17 @@
+--- a/bsd/sweet_hfs/core/hfs_vfsops.c
++++ b/bsd/sweet_hfs/core/hfs_vfsops.c
+@@ -199,3 +199,12 @@
+ 	cmdflags = (u_int32_t)vfs_flags(mp) & MNT_CMDFLAGS;
+ 	if (cmdflags & MNT_UPDATE) {
++#if defined(ARM64_BOARD_CONFIG_FOGOS)
++		/* The bring-up root is deliberately read-only; launchd's rw remount
++		 * must not try to write its HFS header or journal. */
++		if ((vfs_flags(mp) & MNT_ROOTFS) && vfs_iswriteupgrade(mp)) {
++			printf("FOGOS HFS: keeping root read-only after rw remount request\n");
++			vfs_setflags(mp, MNT_RDONLY);
++			return 0;
++		}
++#endif
+ 		hfs_assert(data);
+
+
