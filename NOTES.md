@@ -1,3 +1,15 @@
+## Handoff update (2026-11-02: FOGOS pthread image temporarily booted)
+
+User reported packaging run `41425943333` complete. Downloaded its `fogos-boot`
+artifact to `research/fogos-ci/run-41425943333/fogos-boot/fogos-boot.img`
+(16,494,592 bytes; embedded kernel `Image` 16,484,288 bytes). `adb reboot
+bootloader` returned `no devices/emulators found`; direct `fastboot boot` waited,
+then found the phone, sent the image (16,108 KiB), and returned `Booting OKAY`
+(10.9 s). This is temporary boot only; no partition was written. Await a photo
+or report of the new boot result, especially the `FOGOS: built-in
+libpthread-514.100.2 registered` marker and whether it proceeds past
+`pthread_init()`.
+
 ## Handoff update (2026-11-02: pthread provider missing at BSD startup)
 
 The latest boot photo shows the single-CPU and kperf fixes succeeded: XNU reaches
@@ -14,13 +26,10 @@ Added patch `0093-fogos-builtin-pthread-provider.patch` to enable the same
 version-matched built-in provider for FOGOS and reserve its matching kernel
 structure layout. The provider registers at `EARLY_BOOT` before `bsd_init`;
 this fixes the missing function table without bypassing the panic. The next
-step is a fresh FOGOS DEVELOPMENT kernel build, then package that exact kernel
-and test with temporary `fastboot boot`. No device partitions were modified.
-Committed and pushed as `9ff8eb1`; kernel build run `41423543669` is now
-reported successful by the user. Dispatched shim-only packaging run
-`41425943333` using that exact kernel and `debug=0xc serial=3 cpus=1
-keepsyms=1 fogos-ufs-probe=1`. Wait for the user's package completion report;
-do not poll Actions. No device partitions were modified.
+Patch `0093` is committed and pushed as `9ff8eb1`; kernel build run
+`41423543669` completed successfully per user report, and shim-only packaging
+run `41425943333` used that exact kernel with `debug=0xc serial=3 cpus=1
+keepsyms=1 fogos-ufs-probe=1`.
 
 ## Handoff update (2026-11-02: VM/kperf image booted temporarily)
 
