@@ -1,9 +1,10 @@
 --- a/bsd/kern/sweet_amfi.c
 +++ b/bsd/kern/sweet_amfi.c
-@@ -272,10 +272,54 @@
+@@ -272,10 +272,56 @@
  	return 0;
  }
  
++#if defined(ARM64_BOARD_CONFIG_SWEET)
 +/*
 + * Policy "Sandbox": libsystem_sandbox calls __mac_syscall("Sandbox", op,
 + * arg). Without a policy of that name every call fails with ENOPOLICY and
@@ -51,16 +52,19 @@
 +};
 +
 +static mac_policy_handle_t sweet_sandbox_mac_handle;
++#endif
 +
  static struct mac_policy_conf sweet_amfi_mac_conf = {
  	.mpc_name = "SWEET AMFI",
  	.mpc_fullname = "SWEET built-in Mobile File Integrity",
-@@ -293,5 +337,8 @@
+@@ -293,5 +341,10 @@
  	int error = mac_policy_register(&sweet_amfi_mac_conf, &sweet_amfi_mac_handle, NULL);
  	printf("SWEET AMFI: platform binary policy %s (%d)\n",
  	    error ? "NOT registered" : "registered", error);
++#if defined(ARM64_BOARD_CONFIG_SWEET)
 +	error = mac_policy_register(&sweet_sandbox_mac_conf, &sweet_sandbox_mac_handle, NULL);
 +	printf("SWEET Sandbox: permissive policy %s (%d)\n",
 +	    error ? "NOT registered" : "registered", error);
++#endif
  }
- #endif /* ARM64_BOARD_CONFIG_SWEET */
+ #endif /* ARM64_BOARD_CONFIG_SWEET || ARM64_BOARD_CONFIG_FOGOS */

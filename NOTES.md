@@ -1,3 +1,9 @@
+## Handoff update (2026-11-02: userdata root reached PID 1; AMFI NULL panic)
+
+The user's two photos from shim run `41530896646` confirm boot args include `rd=ufsroot0`, and the panic process is `pid 1: init`. Kernel run `41527104699` matches the image. Symbolizing the displayed PC `0xfffffe000782ce24` against that kernel maps it to `accelerate_entitlement_queries`; LR `0xfffffe000782c094` is its caller in `ubc_cs_blob_add`. Disassembly at PC loads a callback from `_amfi` (global address `0xfffffe000723bcb8`) plus offset `0x1a0`; the data abort at low address is consistent with the AMFI interface pointer being NULL. This is an inference corroborated by patch guards: the built-in AMFI provider in 0025/0035 was compiled only for SWEET. Reaching PID 1 means the readonly UFS root selection and HFS mount progressed to loading init; the NVRAM message was not the blocker.
+
+Extended 0025 and 0035 provider/entitlement guards to `ARM64_BOARD_CONFIG_FOGOS`, including the `SweetEntitlements.cpp` implementation. Kept the permissive Sandbox MAC policy from 0050 SWEET-only. These source changes are ready for a FOGOS kernel build; after it succeeds, package the exact run with `rd=ufsroot0` and retry via temporary `fastboot boot`. No device partitions were written.
+
 ## Handoff update (2026-11-02: HFS journal write failure diagnosed)
 
 The user's latest boot photo shows the HFSX signature is accepted and
