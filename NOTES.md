@@ -60,6 +60,20 @@ boot payload, Moto boot/vendor_boot v3 handoff, memory/reserved map, and
 board-specific early platform initialization. The existing shim/ADT are SWEET
 specific; no device boot was attempted and stock partitions remain untouched.
 
+**FOGOS ADT v1 generated:** `python tools/mkadt.py dtb/fogos-moto-g34.adt
+--fogos` writes an ignored 7,976-byte Apple Device Tree. The format parser
+consumed it fully; checks confirmed 8 CPU nodes (6 Cortex-A55, 2 Cortex-A78),
+boot CPU 0, `dram-base=0x180000000`, `dram-size=0xfff00000` (top 1 MiB reserved
+for panic log), GICD/GICR offsets resolving to physical `0x0f200000` and
+`0x0f240000`, timer INTID 19, PSCI SMC, and no SWEET framebuffer/UFS nodes.
+The iOS root's D22AP model identity is retained, with FOGOS/SM6375 board
+compatibles. The Apple `/product` node is absent because its source DeviceTree
+artifact is not in the checkout. This ADT is for XNU bring-up only: the current
+shim still fills SWEET framebuffer fields, FOGOS PSCI CPU-on is absent, and
+the initrd's physical address must be checked against the chosen RAM bank. Do
+not boot it with the current shim. Next: add a no-framebuffer shim profile and
+audit the Android boot/vendor_boot v3 handoff; keep stock partitions intact.
+
 ### Handoff update (2026-11-01, evening: first FOGOS build reaches the compiler path)
 
 **Push unblocked:** `kitbodega` has only `pull` on `dipa-studio/ios-sweet` and the

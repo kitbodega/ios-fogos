@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Build the minimal Apple Device Tree that the SWEET xnu needs to boot.
+"""Build a minimal Apple Device Tree for SWEET, QEMU, or Moto G34 FOGOS.
 
-Only what the early boot path actually reads (see NOTES.md); every MMIO
-address comes from the sweet live FDT. Usage:  mkadt.py OUT.adt [--dump] [--qemu] [--highmem]
+Only what the early boot path actually reads; every board MMIO address comes
+from the corresponding live/shipped device tree. Usage: mkadt.py OUT.adt
+[--dump] [--qemu] [--highmem] [--fogos]
 """
 import hashlib, os, struct, sys
 
@@ -39,6 +40,19 @@ VTIMER_INTID = 19
 QEMU_GICD, QEMU_GICR, QEMU_TIMEBASE = 0x08000000, 0x080a0000, 62500000
 QEMU_VTIMER_INTID = 27
 
+# Moto G34 5G (`fogos`, XT2363-1, SM6375/blair). The live tree has three RAM
+# banks; the upper 4-GiB bank avoids the stock DT's lower-DMA carveouts and the
+# Android bootloader's low-memory initrd. Reserved-memory allocations in the
+# shipped tree are bounded below 4 GiB. See docs/FOGOS_PORT.md for provenance.
+FOGOS_PHYS_BASE, FOGOS_MEM_SIZE = 0x180000000, 0x100000000
+# Keep nonzero: pe_arm_init treats a zero SoC base as "no arm-io node".
+# ADT ranges map child address 0x0 to physical 0x01000000.
+FOGOS_SOC_BASE = 0x01000000
+FOGOS_GICD, FOGOS_GICD_SIZE = 0x0f200000, 0x10000
+FOGOS_GICR, FOGOS_GICR_SIZE = 0x0f240000, 0x100000
+FOGOS_TIMEBASE, FOGOS_VTIMER_INTID = 19200000, 19
+FOGOS_ECID = 0x464F474F53000001  # 'FOGOS' + 1, synthetic; never a device serial
+
 BOOT_MANIFEST_HASH = hashlib.sha384(b'sweet boot manifest').digest()
 
 # The iOS userland is the iPhone X (iPhone10,3 / D22AP) IPSW. MobileGestalt
@@ -74,13 +88,23 @@ def node(name, props=(), children=()):
     return n
 
 
-def build(seed=None, qemu=False, highmem=False):
+def build(seed=None, qemu=False, highmem=False, fogos=False):
     """qemu=True: same tree, but with QEMU virt's GIC addresses and CNTFRQ (tools/qemu-sweet.py)."""
-    phys_base, mem_size = (HIGH_PHYS_BASE, HIGH_MEM_SIZE) if highmem else (PHYS_BASE, MEM_SIZE)
+    if fogos and (qemu or highmem):
+        raise ValueError('--fogos cannot be combined with --qemu or --highmem')
+    phys_base, mem_size = ((FOGOS_PHYS_BASE, FOGOS_MEM_SIZE) if fogos else
+                           (HIGH_PHYS_BASE, HIGH_MEM_SIZE) if highmem else
+                           (PHYS_BASE, MEM_SIZE))
     # Carve the panic log off the top so the kernel never allocates over it.
     panic_base = phys_base + mem_size - PANIC_LOG_SIZE
     mem_size -= PANIC_LOG_SIZE
-    gicd, gicr, timebase = (QEMU_GICD, QEMU_GICR, QEMU_TIMEBASE) if qemu else (GICD, GICR, TIMEBASE)
+    gicd, gicr, timebase = ((FOGOS_GICD, FOGOS_GICR, FOGOS_TIMEBASE) if fogos else
+                            (QEMU_GICD, QEMU_GICR, QEMU_TIMEBASE) if qemu else
+                            (GICD, GICR, TIMEBASE))
+    soc_base = FOGOS_SOC_BASE if fogos else SOC_BASE
+    vtimer_intid = FOGOS_VTIMER_INTID if fogos else QEMU_VTIMER_INTID if qemu else VTIMER_INTID
+    firmware_name = 'fogos-xnu-shim' if fogos else 'sweet-shim'
+    ecid = FOGOS_ECID if fogos else SWEET_ECID
     seed = seed if seed is not None else os.urandom(64)
     phandle = iter(range(1, 1000))
     ph = lambda: ('AAPL,phandle', u32(next(phandle)))
@@ -92,8 +116,8 @@ def build(seed=None, qemu=False, highmem=False):
         ('random-seed', seed),
         ('debug-enabled', u32(1)),
         ('embedded-panic-log-size', u32(PANIC_LOG_SIZE)),
-        ('firmware-version', cstr('sweet-shim')),
-        ('system-firmware-version', cstr('sweet-shim')),
+        ('firmware-version', cstr(firmware_name)),
+        ('system-firmware-version', cstr(firmware_name)),
         # iBoot's SHA-384 of the boot manifest; /sbin/mount -P 1 exits unless
         # it exists (bind mounts /private/preboot/<hex>/usr/standalone/firmware,
         # tolerating a missing directory). Fixed stand-in value.
@@ -111,7 +135,7 @@ def build(seed=None, qemu=False, highmem=False):
         # files), so e.g. DataMigration never records LastSystemVersion and
         # migrates on every boot. Synthetic ECID (not the phone's); chip-id
         # of the A11 that the iPhone X userland expects.
-        ('unique-chip-id', struct.pack('<Q', SWEET_ECID)),
+        ('unique-chip-id', struct.pack('<Q', ecid)),
         ('chip-id', u32(0x8015)),
         # Security status as on a dev-fused, undemoted board (tuple 0,0,1,1):
         # MobileGestalt reads these from /chosen, and mobileactivationd's
@@ -135,25 +159,38 @@ def build(seed=None, qemu=False, highmem=False):
     # QEMU retains its original single-CPU tree: its MPIDRs differ from sweet.
     cpu_nodes = []
     for core in range(1 if qemu else 8):
+        if fogos:
+            cpu_name = 'arm,cortex-a55' if core < 6 else 'arm,cortex-a78'
+            cluster_type = ord('E') if core < 6 else ord('P')
+            cluster_core = core if core < 6 else core - 6
+            cpu_compat = cstr(cpu_name) + cstr('ARM,v8')
+            cpu_mpidr = core << 8  # matches live FDT cpu@0..cpu@700
+        else:
+            cpu_compat = cstr('qcom,kryo470') + cstr('ARM,v8')
+            cluster_type = 0
+            cluster_core = core
+            cpu_mpidr = core << 8
         cpu_nodes.append(node(f'cpu{core}', [
             ph(),
             ('device_type', cstr('cpu')),
-            ('compatible', cstr('qcom,kryo470') + cstr('ARM,v8')),
-            ('reg', u32(core << 8)),  # actual MPIDR Aff1:Aff0, NOT logical ID
+            ('compatible', cpu_compat),
+            ('reg', u32(cpu_mpidr)),  # physical MPIDR, not logical CPU ID
             ('cpu-id', u32(core)),   # descriptive: XNU assigns IDs by DT order
-            ('cluster-id', u32(0)),  # descriptive; see ml_parse_cpu_topology
-            ('cluster-type', u32(0)),  # homogeneous CLUSTER_TYPE_SMP, not AMP
-            ('die-cluster-id', u32(0)),
-            ('cluster-core-id', u32(core)),
+            ('cluster-id', u32(0 if not fogos else (0 if core < 6 else 1))),
+            ('cluster-type', u32(cluster_type)),
+            ('die-cluster-id', u32(0 if not fogos else core)),
+            ('cluster-core-id', u32(cluster_core)),
             ('l2-cache-id', u32(core)),  # distinct per-core L2 nodes in live FDT
             ('l3-cache-id', u32(0)),     # shared L3
             ('state', cstr('running' if core == 0 else 'stopped')),
             ('timebase-frequency', u32(timebase)),
-            ('clock-frequency', u32(2304000000 if core >= 6 else 1804800000)),
-            ('bus-frequency', u32(100000000)),
-            ('memory-frequency', u32(1866000000)),
-            ('peripheral-frequency', u32(timebase)),
-            ('fixed-frequency', u32(timebase)),
+            *([] if fogos else [
+                ('clock-frequency', u32(2304000000 if core >= 6 else 1804800000)),
+                ('bus-frequency', u32(100000000)),
+                ('memory-frequency', u32(1866000000)),
+                ('peripheral-frequency', u32(timebase)),
+                ('fixed-frequency', u32(timebase)),
+            ]),
         ]))
     cpus = node('cpus', [ph(), ('#address-cells', u32(1)),
                          ('#size-cells', u32(0))], cpu_nodes)
@@ -162,16 +199,17 @@ def build(seed=None, qemu=False, highmem=False):
         ph(),
         ('compatible', cstr('arm,gic-v3')),
         ('interrupt-controller', b''),
-        ('virtual-timer-intid', u32(QEMU_VTIMER_INTID if qemu else VTIMER_INTID)),
-        ('reg', u64(gicd - SOC_BASE, GICD_SIZE, gicr - SOC_BASE, GICR_SIZE)),
+        ('virtual-timer-intid', u32(vtimer_intid)),
+        ('reg', u64(gicd - soc_base, FOGOS_GICD_SIZE if fogos else GICD_SIZE,
+                    gicr - soc_base, FOGOS_GICR_SIZE if fogos else GICR_SIZE)),
     ])
     arm_io = node('arm-io', [
         ph(),
-        ('device_type', cstr('sweet-io')),
-        ('compatible', cstr('sweet-io') + cstr('arm-io')),
+        ('device_type', cstr('fogos-io' if fogos else 'sweet-io')),
+        ('compatible', (cstr('qcom,sm6375') if fogos else cstr('sweet-io')) + cstr('arm-io')),
         ('#address-cells', u32(2)),
         ('#size-cells', u32(2)),
-        ('ranges', u64(0, SOC_BASE, 0x100000000 - SOC_BASE)),
+        ('ranges', u64(0, soc_base, 0x100000000 - soc_base)),
     ], [gic,
         # No hardware: watchdogd checks IODeviceTree:/arm-io/wdt for no-pmu and
         # otherwise crashes trying to set the PMU boot stage (customer builds
@@ -229,20 +267,39 @@ def build(seed=None, qemu=False, highmem=False):
     # Identity of the iPhone X whose userland runs here: compatible[0] is
     # hw.model/hw.target (D22AP), model is hw.machine/hw.product
     # (iPhone10,3). 'xiaomi,sweet' stays for SweetPlatformExpert matching.
+    if fogos:
+        # Keep the iPhone X identity expected by the existing iOS 16 root,
+        # while the board compatible strings continue to identify Moto FOGOS.
+        compatible = cstr('D22AP') + cstr('iPhone10,3') + cstr('motorola,fogos') + cstr('qcom,sm6375') + cstr('AppleARM')
+        model, target, subtype, manufacturer = 'iPhone10,3', 'D22', 'D22AP', 'Apple Inc.'
+        # FOGOS has no SWEET framebuffer or UFS shim node; expose only board
+        # discovery nodes needed by XNU and the PSCI conduit found in stock FDT.
+        arm_io.children = [gic, node('psci', [ph(), ('compatible', cstr('arm,psci-1.0')),
+                                             ('method', cstr('smc'))]),
+                           node('wdt', [ph(), ('no-pmu', u32(1))])]
+        children = [chosen, defaults, cpus, arm_io, buttons, pram] + product
+    else:
+        compatible = cstr('D22AP') + cstr('iPhone10,3') + cstr('xiaomi,sweet') + cstr('qcom,sm7150') + cstr('AppleARM')
+        model, target, subtype, manufacturer = 'iPhone10,3', 'D22', 'D22AP', 'Apple Inc.'
+        children = [chosen, defaults, cpus, arm_io, fbcon, buttons, pram] + product + ([] if qemu else [ufs])
+
     return node('device-tree', [
         ph(),
-        ('compatible', cstr('D22AP') + cstr('iPhone10,3') + cstr('xiaomi,sweet') + cstr('qcom,sm7150') + cstr('AppleARM')),
-        ('model', cstr('iPhone10,3')),
-        ('target-type', cstr('D22')),
-        ('target-sub-type', cstr('D22AP')),
-        ('manufacturer', cstr('Apple Inc.')),
+        ('compatible', compatible),
+        ('model', cstr(model)),
+        ('target-type', cstr(target)),
+        ('target-sub-type', cstr(subtype)),
+        ('manufacturer', cstr(manufacturer)),
         ('#address-cells', u32(2)),
         ('#size-cells', u32(2)),
-    ], [chosen, defaults, cpus, arm_io, fbcon, buttons, pram] + product + ([] if qemu else [ufs]))
+    ], children)
 
 
 if __name__ == '__main__':
-    root = build(qemu='--qemu' in sys.argv, highmem='--highmem' in sys.argv)
+    if len(sys.argv) < 2:
+        raise SystemExit('usage: mkadt.py OUT.adt [--dump] [--qemu] [--highmem] [--fogos]')
+    root = build(qemu='--qemu' in sys.argv, highmem='--highmem' in sys.argv,
+                 fogos='--fogos' in sys.argv)
     blob = adt.serialize(root)
     open(sys.argv[1], 'wb').write(blob)
     if '--dump' in sys.argv:

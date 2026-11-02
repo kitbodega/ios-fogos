@@ -42,16 +42,43 @@ The binary, symbols/link metadata, build log and buildtree are preserved under
 ignored `research/fogos-ci/run-41363602897/`. This proves compile and link only;
 the artifact is not an Android boot image and has not been booted.
 
-Before attempting a temporary device boot, prepare a FOGOS-specific ADT and
-boot payload, then audit the handoff against the Moto boot chain. `tools/mkadt.py`
-and the existing shim path currently model SWEET and its 16K-page boot layout;
-the Moto's boot/vendor_boot v3 handoff and real RAM/reserved map need to be
-represented accurately. `FOGOS.h` explicitly says it initializes no hardware.
-In addition, current early framebuffer mappings and final remap are guarded by
-`SWEET`, so FOGOS takes the generic XNU paths. No platform expert, PSCI CPU
-startup path, FOGOS console, or storage/display/touch drivers have been added.
-The next safe milestone is a diagnostic-only image and an audited temporary
-`fastboot boot`; do not flash partitions or use the SWEET ADT/root image.
+**FOGOS ADT v1 is generated** at ignored `dtb/fogos-moto-g34.adt` by
+`python tools/mkadt.py dtb/fogos-moto-g34.adt --fogos [--dump]`. It is 7,976
+bytes and the local ADT parser consumes it fully. Assertions checked all eight
+CPU nodes, the boot CPU, six A55/two A78 cluster types, high-memory range,
+GICD/GICR and virtual timer INTID 19, PSCI `smc`, and absence of SWEET-only
+framebuffer/UFS nodes. The root compatible list deliberately retains the
+iPhone10,3 / D22AP identity expected by the existing iOS 16 root while adding
+`motorola,fogos` and `qcom,sm6375` board identifiers. No device serial or stock
+dump was copied into the ADT. `arm-io/ranges` maps child address zero to
+`0x01000000`; this is a nonzero translation anchor because this XNU's
+`pe_arm_init` treats a zero SoC base as “no arm-io”. The GIC registers are
+stored relative to that anchor, so the resulting physical mappings remain the
+DTB values `0x0f200000` and `0x0f240000`.
+
+Memory choice is based on the live DT: banks are `0x80000000+0x3bb00000`,
+`0xc0000000+0xc0000000`, and `0x180000000+0x100000000`. All explicit reserved
+ranges and dynamic reserved-memory allocation limits in the stock tree are
+below 4 GiB, so ADT v1 gives XNU the upper 4-GiB bank and holds back its top
+1-MiB panic log. This avoids claiming a contiguous range across the holes and
+keeps the kernel's allocation range outside the listed lower carveouts. The
+Android bootloader's actual initrd address still needs checking at handoff;
+the shim rejects a payload if the initrd overlaps the selected bank.
+
+The generated tree uses the existing iOS root's D22AP/iPhone10,3 identity plus
+FOGOS board compatibles. The Apple `/product` property set is absent because
+the matching Apple DeviceTree artifact is not in this checkout; kernel
+bring-up does not need it, but MobileGestalt may fall back to a generic product
+identity until that data is supplied or recreated.
+
+This is an ADT for the first XNU bring-up, **not yet a boot-ready image**.
+Start with `cpus=1` because XNU still lacks the FOGOS PSCI CPU-on path. The
+ADT describes the observed `smc` PSCI conduit, but that does not implement it.
+The current shim still writes SWEET framebuffer values into `boot_args.Video`,
+and the FOGOS kernel has no board console, platform expert, storage, display,
+or touch drivers. Do not pass this ADT through the unmodified SWEET shim or
+boot it yet. Next: make the shim accept a no-framebuffer FOGOS profile and
+audit the Android boot/vendor_boot v3 handoff before a temporary `fastboot boot`.
 
 ## CI runner (2026-11-01)
 
@@ -201,17 +228,19 @@ sequencing and protocol study and must be reimplemented for XNU.
    with the extracted stock DTB/DTBO. Obtain the Motorola kernel source for the
    firmware build and map CPU, GIC, PSCI, RAM, reserved memory, UFS, display and
    touch hardware.
-3. Add a fogos board target and ADT generator based on those artifacts. Keep
-   the existing sweet defaults intact. Verify address ranges, RAM and reserved
-   regions against the live DT before mapping hardware.
-4. Build XNU for the target CPU features, then boot only with `fastboot boot`.
-   Start with framebuffer or another safe diagnostic channel and CPU/timer
-   initialization. Do not flash boot, recovery, modem, persist, or alter GPT.
+3. The FOGOS board target and ADT v1 now exist. Keep the SWEET defaults intact.
+   Recheck the ADT's high-bank physical destination against the Android
+   initrd address in the bootloader handoff before using it.
+4. Add a no-framebuffer FOGOS shim profile and early diagnostic path, then
+   build the temporary boot image. Only after auditing the handoff should a
+   test use `fastboot boot`; do not flash boot, recovery, modem, persist, or
+   alter GPT.
 5. Bring up storage read-only first, then display/input and only later an iOS
    root image. Any userdata erase requires a separate explicit confirmation.
 
-No fogos kernel changes or boot images have been built yet. The phone and
-firmware are available locally. The next implementation gate is confirming
-whether the bootloader can accept a temporary `fastboot boot` image; the
-fastboot executable is present in the Android SDK, but the phone has not been
-rebooted to fastboot.
+The FOGOS kernel has compiled and linked, and ADT v1 has been generated and
+parsed locally. No FOGOS boot image exists and the phone has not been booted
+with XNU. The current shim's `boot_args.Video` still points at SWEET's
+framebuffer, so it must not be used with this ADT. The next implementation
+gate is a no-framebuffer shim plus verifying the actual initrd/RAM handoff;
+the phone has not been rebooted to fastboot.
