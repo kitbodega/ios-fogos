@@ -162,7 +162,7 @@ index 0000000..8f4c808
 +#define EARLY_WIDTH 1080u
 +#define EARLY_HEIGHT 2400u
 +#define EARLY_STRIDE (4320u / 4)
-+#define EARLY_SCALE 2u
++#define EARLY_SCALE 1u
 +#define EARLY_CELL_W (8u * EARLY_SCALE)
 +#define EARLY_CELL_H (16u * EARLY_SCALE)
 +#define EARLY_ROWS ((EARLY_HEIGHT - 32u) / EARLY_CELL_H)

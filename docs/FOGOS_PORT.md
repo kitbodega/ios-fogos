@@ -330,3 +330,8 @@ Patches 0013 and 0014 previously enabled the allocator SplitMix64 fallback and t
 The boot using kernel run `41371376347` advanced beyond the allocator panic but faulted branching to address zero: `PC=0`, `ESR=0x86000005`, `FAR=0`, `LR=0xfffffe0007454af4`. The LR symbolizes as `read_random`; the instruction at LR-4 is `blr x8`, and x8 was loaded from `prng_funcs.refresh`. The kernel lacks the `sweet_prng_startup` symbol/registration string, so the built-in PRNG provider was not compiled into this FOGOS kernel.
 
 The patch guards tested `defined(FOGOS)`, but that macro is declared inside `FOGOS.h`; `prng_random.c` and `entropy.c` do not include that header. The globally supplied board-selection macro is `ARM64_BOARD_CONFIG_FOGOS`. Patches 0013/0014 now use `ARM64_BOARD_CONFIG_SWEET || ARM64_BOARD_CONFIG_FOGOS`; a fresh kernel build and packaging are required before another boot.
+
+
+## Diagnostic font size
+
+The FOGOS shim status console now renders its 8x16 font at 2x scale (previously 3x). The XNU framebuffer console and early-stage framebuffer text use the native 8x16 glyph size (previously 2x), allowing more columns and rows of panic diagnostics on the 720x1600 panel. Patch 0086's context tracks the updated EARLY_SCALE from patch 0010.

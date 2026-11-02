@@ -126,7 +126,7 @@ index 6928957..baed563 100644
 +#define EARLY_PREFIX "SWEET EARLY "
 +#endif
 +#define EARLY_FB early_fb
- #define EARLY_SCALE 2u
+ #define EARLY_SCALE 1u
  #define EARLY_CELL_W (8u * EARLY_SCALE)
  #define EARLY_CELL_H (16u * EARLY_SCALE)
 @@ -99,7 +108,7 @@ sweet_early_mark(unsigned int stage, const char *label)
