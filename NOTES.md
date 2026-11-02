@@ -1,3 +1,7 @@
+## Handoff update (2026-11-02: stall narrows to VM restriction or early kperf)
+
+The user's new photo shows the `IOLog` markers from the updated image: `PE_lockdown_iokit begin`, `IOKit matching begin/returned 1`, `PE_lockdown_iokit returned`, then the platform expert start/registered logs. It still does not show `bsd_init call begin`. In `startup.c`, the only stages between `PE_lockdown_iokit` returning and that marker are `vm_set_restrictions(machine_info.max_cpus)` and (when `KPERF`) `kperf_init_early()`. Added patch `0091-fogos-post-lockdown-markers.patch` to log before/after those stages and report `KPERF`; patch applies after 0089/0090. Commit `349406c` pushed. Dispatched FOGOS DEVELOPMENT kernel run `41414484989`; do not poll. After user reports successful build, package and temporary-boot it. No partition writes.
+
 ## Handoff update (2026-11-02: IOLog kernel reported compiled; package queued)
 
 The user reports kernel run `41412204571` compiled successfully. Dispatched shim-only packaging run `41413659553` with `debug=0xc serial=3 cpus=1 keepsyms=1 fogos-ufs-probe=1`. Do not poll Actions. Once user reports packaging completion, download `fogos-boot` and temporary-boot it; no partition writes.
