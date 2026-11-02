@@ -17,7 +17,10 @@ this fixes the missing function table without bypassing the panic. The next
 step is a fresh FOGOS DEVELOPMENT kernel build, then package that exact kernel
 and test with temporary `fastboot boot`. No device partitions were modified.
 Committed and pushed as `9ff8eb1`; kernel build run `41423543669` is now
-running. Wait for the user's completion report; do not poll Actions.
+reported successful by the user. Dispatched shim-only packaging run
+`41425943333` using that exact kernel and `debug=0xc serial=3 cpus=1
+keepsyms=1 fogos-ufs-probe=1`. Wait for the user's package completion report;
+do not poll Actions. No device partitions were modified.
 
 ## Handoff update (2026-11-02: VM/kperf image booted temporarily)
 
