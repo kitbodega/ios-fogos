@@ -1,3 +1,24 @@
+## Handoff update (2026-11-02: pthread fixed; FOGOS UFS patch was skipped)
+
+The latest boot photo shows the kernel now passes `pthread_init()`, enters
+`FOGOS: setconf begin`, and waits for an `IOMedia` root whose content is
+`Apple_HFS`. `Failed to write boot-picker-bringup-reason to NVRAM` is expected
+because this standalone boot has no Apple NVRAM provider. The wait is not a
+panic; there is no iOS root volume attached yet.
+
+Inspected the kernel artifact and Actions log for run `41432190971`: patch
+`0088-fogos-ufs-readonly.patch` was skipped because its context at
+`bsd/dev/sweet_ufs.c` expected SWEET input hooks not present in this XNU source,
+its final hunk line count was wrong, and its `IOKitBSDInit.cpp` hunk expected a
+FOGOS comment that was not in the source. That explains why the FOGOS UFS
+probe string is absent from the kernel
+and why `IOFindBSDRoot` falls through to generic Apple_HFS matching. Updated
+0088 to match the source; a local `git apply --check` against the exact previous
+buildtree now passes all hunks. Changed the workflow default machine config to
+FOGOS so pushes to FOGOS `main` use the right target. Next build must confirm
+0088 applies and its UFS marker is in the kernel before packaging. No
+partitions written.
+
 ## Handoff update (2026-11-02: corrected pthread image booted temporarily)
 
 User reported packaging run `41488725234` complete. Downloaded its `fogos-boot`
@@ -26,12 +47,11 @@ report before download/boot. No partitions written.
 User requested that the FOGOS development line become `main`. The GitHub repo
 already has `main` as its default branch; remote `main` was an ancestor of
 `fogos-port-init`. Promoted the FOGOS line by fast-forwarding `fork/main` to
-the current FOGOS commit, preserving history. The `fogos-port-init` remote ref
-is kept temporarily because kernel build run `41432190971` was dispatched from
-it and is still awaiting the user's completion report. Local branch naming is
-now aligned: local `main` tracks `fork/main`, and local `upstream-main` tracks
-the original `origin/main`. Promotion commit is `447b588`. No changes to device
-partitions.
+the FOGOS commit, preserving history. Local `main` tracks `fork/main`, and
+local `upstream-main` tracks the original `origin/main`. Promotion commit was
+`447b588`; `main` has since advanced with notes-only commits. Kernel run
+`41432190971` from the old branch completed, so `fogos-port-init` can now be
+removed after the UFS fix is committed to `main`. No device partitions changed.
 
 ## Handoff update (2026-11-02: pthread fix package downloaded; fastboot USB failed)
 

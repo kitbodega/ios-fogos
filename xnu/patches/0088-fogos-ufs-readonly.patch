@@ -142,7 +142,7 @@
  		return ENOMEM;
  	}
  	ppnum_t pn = pmap_find_phys(kernel_pmap, (addr64_t)su.dma);
-@@ -649,17 +658,23 @@
+@@ -649,11 +658,17 @@
  	devfs_make_node(su.bdev, DEVFS_BLOCK, UID_ROOT, GID_OPERATOR, 0640, "ufsroot0");
  	devfs_make_node(makedev(su.cmajor, 0), DEVFS_CHAR, UID_ROOT, GID_OPERATOR, 0640, "rufsroot0");
  	/* Only now, with the partition bounds known, can writes be allowed. */
@@ -158,11 +158,6 @@
  	    su.writable ? "read-write" : "read-only", su.dma_pa);
 +#if defined(ARM64_BOARD_CONFIG_SWEET)
  	sweet_log_start();
- 	sweet_sample_start();
- 	/* Input drivers (HID services in iokit/Kernel/arm/hid/SweetHID.cpp). */
- 	sweet_keys_init();
- 	sweet_touch_init();
- 	sweet_usb_probe();
 +#endif
  	return 0;
  }
@@ -184,7 +179,8 @@
 -#if defined(ARM64_BOARD_CONFIG_SWEET)
 +#if defined(ARM64_BOARD_CONFIG_SWEET) || defined(ARM64_BOARD_CONFIG_FOGOS)
  //
- //	FOGOS/SWEET: root on a GPT partition of the internal UFS (bsd/dev/sweet_ufs.c)
+-//	SWEET: root on a GPT partition of the internal UFS (bsd/dev/sweet_ufs.c)
++//	FOGOS/SWEET: root on a GPT partition of the internal UFS (bsd/dev/sweet_ufs.c)
  //
 @@ -775,13 +776,25 @@
  		OSSafeReleaseNULL(matching);
