@@ -1,3 +1,7 @@
+## Handoff update (2026-11-02: IOLog kernel reported compiled; package queued)
+
+The user reports kernel run `41412204571` compiled successfully. Dispatched shim-only packaging run `41413659553` with `debug=0xc serial=3 cpus=1 keepsyms=1 fogos-ufs-probe=1`. Do not poll Actions. Once user reports packaging completion, download `fogos-boot` and temporary-boot it; no partition writes.
+
 ## Handoff update (2026-11-02: IOLog diagnostic rebuild queued)
 
 After the photo lacked the patch 0089 markers, added `xnu/patches/0090-fogos-iokit-console-markers.patch` to route those same markers through `IOLog` instead of `printf`; this uses the same console logging call as the visible IOKit markers. Patch applies after 0089. Commit `0b56c46` is pushed. Dispatched a fresh FOGOS DEVELOPMENT kernel build, run `41412204571`. Do not poll; wait for the user to report completion, then package and temporary-boot it. Prior run `41410953077` was already downloaded and temporary-booted; its screen photo did not display the new markers. No partitions written.
