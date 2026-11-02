@@ -1,6 +1,10 @@
+## Handoff update (2026-11-02: include selected board config in PRNG units)
+
+The two new panic photos establish `PC=0`, `ESR=0x86000005`, `FAR=0`, `LR=0xfffffe0007454af4`; saved `x8=0`. In the kernel for run `41372695593`, LR is exactly after `blr x8` in `_read_random`, and x8 is loaded from `prng_funcs.refresh`. The provider callback table was not registered. The previous guards alone did not ensure the machine config macro was visible in this translation unit. Updated patch 0014 to include `<pexpert/arm64/board_config.h>` explicitly in `prng_random.c` and `entropy.c`, so FOGOS board selection is imported before the `ARM64_BOARD_CONFIG_FOGOS` conditional. Next: commit/push and launch a fresh kernel build. Do not use older image.
+
 ## Handoff update (2026-11-02: smaller diagnostic fonts requested)
 
-User confirmed they want smaller phone diagnostic text in both the shim and XNU. Changed shim font scale from 3x to 2x, framebuffer panic console from 2x to native 8x16, and early XNU markers from 2x to native 8x16. Updated patch 0086's context to keep patch-stack compatibility. No build or device test run yet. Next: commit/push and dispatch the FOGOS DEVELOPMENT build; after it finishes, package that exact kernel with shim-only and give the user the temporary boot image.
+User confirmed they want smaller phone diagnostic text in both the shim and XNU. Changed shim font scale from 3x to 2x, framebuffer panic console from 2x to native 8x16, and early XNU markers from 2x to native 8x16. Updated patch 0086's context to keep patch-stack compatibility. Committed/pushed as `ffb3e3e`; FOGOS DEVELOPMENT build run `41376119409` was reported complete by the user. Shim-only package run `41376831723` was reported complete by the user. `gh run download` returned no image and did not create the expected local directory; no CI status was queried per user request. Artifact availability/conclusion remains unknown. Next: need a successful artifact or user authorization to inspect run/artifacts.
 
 ## Handoff update (2026-11-02: PRNG guard used the wrong FOGOS macro)
 
