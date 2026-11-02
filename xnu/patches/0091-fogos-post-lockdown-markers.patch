@@ -1,0 +1,30 @@
+diff --git a/osfmk/kern/startup.c b/osfmk/kern/startup.c
+--- a/osfmk/kern/startup.c
++++ b/osfmk/kern/startup.c
+@@ -783,11 +783,26 @@
+ 	 * max_cpus must be nailed down by the time PE_lockdown_iokit() finishes,
+ 	 * at the latest
+ 	 */
++#if defined(ARM64_BOARD_CONFIG_FOGOS)
++	IOLog("FOGOS: vm_set_restrictions begin\n");
++#endif
+ 	vm_set_restrictions(machine_info.max_cpus);
++#if defined(ARM64_BOARD_CONFIG_FOGOS)
++	IOLog("FOGOS: vm_set_restrictions returned\n");
++#endif
+ 
+ 
+ #if KPERF
++#if defined(ARM64_BOARD_CONFIG_FOGOS)
++	IOLog("FOGOS: kperf_init_early begin\n");
++#endif
+ 	kperf_init_early();
++#if defined(ARM64_BOARD_CONFIG_FOGOS)
++	IOLog("FOGOS: kperf_init_early returned\n");
++#endif
++#endif
++#if defined(ARM64_BOARD_CONFIG_FOGOS)
++	IOLog("FOGOS: post-kperf stage reached (KPERF=%d)\n", KPERF);
+ #endif
+ 
+ 	/*
