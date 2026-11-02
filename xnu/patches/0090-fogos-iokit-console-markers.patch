@@ -1,0 +1,94 @@
+diff --git a/osfmk/kern/startup.c b/osfmk/kern/startup.c
+--- a/osfmk/kern/startup.c
++++ b/osfmk/kern/startup.c
+@@ -91,6 +91,7 @@
+ #include <kern/sfi.h>
+ #endif
+ #include <kern/startup.h>
++extern void IOLog(const char *format, ...);
+ #include <kern/task.h>
+ #include <kern/thread.h>
+ #include <kern/timer.h>
+@@ -771,11 +772,11 @@
+ #ifdef  IOKIT
+ 	kernel_bootstrap_log("PE_lockdown_iokit");
+ #if defined(ARM64_BOARD_CONFIG_FOGOS)
+-	printf("FOGOS: PE_lockdown_iokit begin\n");
++	IOLog("FOGOS: PE_lockdown_iokit begin\n");
+ #endif
+ 	PE_lockdown_iokit();
+ #if defined(ARM64_BOARD_CONFIG_FOGOS)
+-	printf("FOGOS: PE_lockdown_iokit returned\n");
++	IOLog("FOGOS: PE_lockdown_iokit returned\n");
+ #endif
+ #endif
+ 	/*
+@@ -794,11 +795,11 @@
+ 	 */
+ #ifdef  MACH_BSD
+ #if defined(ARM64_BOARD_CONFIG_FOGOS)
+-	printf("FOGOS: bsd_init call begin\n");
++	IOLog("FOGOS: bsd_init call begin\n");
+ #endif
+ 	bsd_init();
+ #if defined(ARM64_BOARD_CONFIG_FOGOS)
+-	printf("FOGOS: bsd_init returned\n");
++	IOLog("FOGOS: bsd_init returned\n");
+ #endif
+ #endif
+ 
+diff --git a/bsd/kern/bsd_init.c b/bsd/kern/bsd_init.c
+--- a/bsd/kern/bsd_init.c
++++ b/bsd/kern/bsd_init.c
+@@ -102,6 +102,7 @@
+ #include <sys/codesign.h>
+ 
+ #include <kern/startup.h>
++extern void IOLog(const char *format, ...);
+ #include <kern/thread.h>
+ #include <kern/task.h>
+ #include <kern/ast.h>
+@@ -487,7 +488,7 @@
+ #endif
+ 
+ #if defined(ARM64_BOARD_CONFIG_FOGOS)
+-	printf("FOGOS: bsd_init entered\n");
++	IOLog("FOGOS: bsd_init entered\n");
+ #endif
+ #if (DEVELOPMENT || DEBUG)
+ 	platform_stall_panic_or_spin(PLATFORM_STALL_XNU_LOCATION_BSD_INIT);
+@@ -870,12 +871,12 @@
+ 		int err;
+ 
+ #if defined(ARM64_BOARD_CONFIG_FOGOS)
+-		printf("FOGOS: setconf begin\n");
++		IOLog("FOGOS: setconf begin\n");
+ #endif
+ 		bsd_init_kprintf("calling setconf\n");
+ 		setconf();
+ #if defined(ARM64_BOARD_CONFIG_FOGOS)
+-		printf("FOGOS: setconf returned\n");
++		IOLog("FOGOS: setconf returned\n");
+ #endif
+ #if CONFIG_NETBOOT
+ 		netboot = (mountroot == netboot_mountroot);
+@@ -883,16 +884,16 @@
+ 
+ 		bsd_init_kprintf("vfs_mountroot\n");
+ #if defined(ARM64_BOARD_CONFIG_FOGOS)
+-		printf("FOGOS: vfs_mountroot begin\n");
++		IOLog("FOGOS: vfs_mountroot begin\n");
+ #endif
+ 		if (0 == (err = vfs_mountroot())) {
+ #if defined(ARM64_BOARD_CONFIG_FOGOS)
+-			printf("FOGOS: vfs_mountroot returned success\n");
++			IOLog("FOGOS: vfs_mountroot returned success\n");
+ #endif
+ 			break;
+ 		}
+ #if defined(ARM64_BOARD_CONFIG_FOGOS)
+-		printf("FOGOS: vfs_mountroot returned error %d\n", err);
++		IOLog("FOGOS: vfs_mountroot returned error %d\n", err);
+ #endif
+ 		rootdevice[0] = '\0';
+ #if CONFIG_NETBOOT
