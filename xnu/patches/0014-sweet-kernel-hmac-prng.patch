@@ -7,7 +7,7 @@ diff --git a/osfmk/prng/prng_random.c b/osfmk/prng/prng_random.c
  
 +#include <pexpert/arm64/board_config.h>
  #include <kern/locks.h>
-@@ -145,6 +145,140 @@
+@@ -145,6 +145,141 @@
  		     .strictFIPS = 0,
  	     }};
  
@@ -149,7 +149,7 @@ diff --git a/osfmk/prng/prng_random.c b/osfmk/prng/prng_random.c
  static void read_erandom(void * buf, size_t nbytes);
  
  /*
-@@ -339,12 +473,22 @@
+@@ -339,12 +475,22 @@
  write_random(void * buffer, u_int numbytes)
  {
  	uint8_t seed[SHA256_DIGEST_LENGTH];
@@ -172,7 +172,7 @@ diff --git a/osfmk/prng/prng_random.c b/osfmk/prng/prng_random.c
  
  	prng_funcs.reseed(prng_ctx, sizeof(seed), seed);
  	cc_clear(sizeof(seed), seed);
-@@ -431,5 +572,10 @@
+@@ -431,5 +577,11 @@
  read_random(void * buffer, u_int numbytes)
  {
 +#if defined(ARM64_BOARD_CONFIG_FOGOS)
