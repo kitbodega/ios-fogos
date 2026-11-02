@@ -1,4 +1,4 @@
-## Handoff update (2026-11-02: UFS userdata located on Motorola LUN 4)
+## Handoff update (2026-11-02: LUN 4 kernel built; shim package queued)
 
 The user's latest photo from temporary boot of package `41494933417` shows XNU
 passes `pthread_init`, reaches BSD root selection, then reports
@@ -10,11 +10,13 @@ the phone's userdata is on UFS LUN 4, while the driver currently probes LUN 0.
 
 Updated `0088-fogos-ufs-readonly.patch` so FOGOS selects LUN 4 and SWEET keeps
 LUN 0. The FOGOS probe remains read-only. `git apply --check` passed against
-the exact extracted XNU buildtree from run `41427529247`. Commit `d14afc8` was
-pushed to `main`; the patch path is push-triggered, so a FOGOS kernel build is
-expected. Per the user's request to avoid repeated checks, no Actions status or
-run ID was queried. Await the user's build completion before packaging and
-temporarily booting. No partitions were written.
+the exact extracted XNU buildtree from run `41427529247`; commit `d14afc8` was
+pushed to `main`. Kernel build run `41496489308` completed successfully, and
+its log confirms `0088-fogos-ufs-readonly.patch` was applied. Dispatched
+shim-only package run `41499139060` from that exact kernel with
+`debug=0xc serial=3 cpus=1 keepsyms=1 fogos-ufs-probe=1`. Await package
+completion before downloading and temporarily booting. No partitions were
+written.
 
 ## Handoff update (2026-11-02: FOGOS UFS support compiled; package queued)
 
