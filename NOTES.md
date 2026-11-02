@@ -5,10 +5,12 @@ The follow-up photo after temporary package `41500341017` shows
 `IOService.cpp:5200: assert(ioblockstoragedriverClass)`. In the exact XNU source,
 `IOService::setRootMedia()` asserts that `IOBlockStorageDriver` exists on all
 boards except SWEET. FOGOS has no `IOStorageFamily`, so this is the same
-missing-storage-family case the SWEET branch already handles. Added patch
-`0095-fogos-no-iostoragefamily-root-assert.patch` to apply that guard to FOGOS;
-next apply-check it against the prior buildtree, commit/push, then build and
-temporarily boot. UFS remains read-only; no device data was changed.
+missing-storage-family case the SWEET branch already handles. Patch
+`0095-fogos-no-iostoragefamily-root-assert.patch` widens that guard to FOGOS;
+`git apply --check` passes against the exact extracted XNU buildtree from run
+`41427529247`. Commit `23d7050` was pushed to `main`; the patch path triggers a
+new FOGOS kernel build. No Actions status/run ID queried; await user completion
+before packaging. UFS remains read-only; no device data was changed.
 
 ## Handoff update (2026-11-02: read-only root-selection image booted)
 
