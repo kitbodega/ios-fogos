@@ -9,10 +9,12 @@ kernel panic. The stock Motorola ROM's `gpt.bin` contains six maps;
 the phone's userdata is on UFS LUN 4, while the driver currently probes LUN 0.
 
 Updated `0088-fogos-ufs-readonly.patch` so FOGOS selects LUN 4 and SWEET keeps
-LUN 0. The FOGOS probe remains read-only. Next: apply-check the patch against
-the exact extracted XNU buildtree, then commit/push to `main`; its patch path
-triggers the next kernel build. Await user's build completion before packaging
-and temporarily booting. No partitions were written.
+LUN 0. The FOGOS probe remains read-only. `git apply --check` passed against
+the exact extracted XNU buildtree from run `41427529247`. Commit `d14afc8` was
+pushed to `main`; the patch path is push-triggered, so a FOGOS kernel build is
+expected. Per the user's request to avoid repeated checks, no Actions status or
+run ID was queried. Await the user's build completion before packaging and
+temporarily booting. No partitions were written.
 
 ## Handoff update (2026-11-02: FOGOS UFS support compiled; package queued)
 
