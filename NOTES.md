@@ -1,4 +1,4 @@
-## Handoff update (2026-11-02: IOMedia guard built; package queued)
+## Handoff update (2026-11-02: IOMedia guard image booted temporarily)
 
 The user's follow-up photo after temporary image `41505704235` shows
 `BSD root: ufsroot0, major 1, minor 0`, followed by
@@ -10,9 +10,13 @@ FOGOS. Added `0096-fogos-no-iomedia-root-assert.patch`; `git apply --check`
 passes against the extracted XNU source from run `41427529247`. Kernel run
 `41507254663` completed successfully, and its log confirms `0096` was applied.
 Dispatched shim-only package run `41510236241` using that exact kernel with
-`debug=0xc serial=3 cpus=1 keepsyms=1 rd=ufsroot0`. Await package completion
-before downloading/booting; per the user's preference, do not poll Actions.
-The UFS driver remains read-only; no device data was changed.
+`debug=0xc serial=3 cpus=1 keepsyms=1 rd=ufsroot0`. Downloaded
+`research/fogos-ci/run-41510236241/fogos-boot/fogos-boot.img` (16,531,456
+bytes). ADB saw `ZY32JNZ8K2` as `device`; `adb reboot bootloader` succeeded,
+then fastboot saw the phone and temporary `fastboot boot` returned
+`Sending OKAY`, `Booting OKAY` (3.883 s total). No device partitions were
+written. Await the user's screen photo/result for the `publishHiddenMedia`
+assertion and mountroot progress.
 
 ## Handoff update (2026-11-02: root-assert fix image booted temporarily)
 
