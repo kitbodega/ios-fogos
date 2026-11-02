@@ -1,13 +1,16 @@
-## Handoff update (2026-11-02: root-assert fix built; package queued)
+## Handoff update (2026-11-02: root-assert fix packaged; phone not enumerated)
 
 Kernel run `41502908861` completed successfully on `macos-15-intel`; its log
 confirms `0095-fogos-no-iostoragefamily-root-assert.patch` applied. The
 push-triggered `fogos-shim` artifact from that run used fallback kernel
-`41405380749` and must not be used. Dispatched shim-only package run
-`41505704235` using kernel `41502908861` and
-`debug=0xc serial=3 cpus=1 keepsyms=1 rd=ufsroot0`. Await package completion,
-then download and temporarily boot its image. No device partitions were
-written.
+`41405380749` and must not be used. Shim-only package run `41505704235`
+completed and its artifact is at
+`research/fogos-ci/run-41505704235/fogos-boot/fogos-boot.img` (16,531,456
+bytes), using kernel `41502908861` and
+`debug=0xc serial=3 cpus=1 keepsyms=1 rd=ufsroot0`. Both
+`fastboot devices -l` and `adb devices -l` returned no attached device, so the
+image was not sent. No device partitions were written. Resume once the phone
+is back in fastboot and enumerates over USB; then use `fastboot boot` only.
 
 ## Handoff update (2026-11-02: build runner switched back to macos-15-intel)
 
