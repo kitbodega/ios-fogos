@@ -30,7 +30,11 @@ patch` (hunk line counts were wrong). Thus the FOGOS kernel had neither change;
 the previous diagnosis that only the board-config include was missing was
 incomplete. Corrected hunk counts in both patches. Need a new kernel build and
 must check it applies/contains the provider marker before packaging. No
-partitions written.
+partitions written. Corrected hunk counts committed/pushed as `681b29e`;
+FOGOS DEVELOPMENT run `41432190971` dispatched on `macos-15-intel`. When the
+user reports success, inspect the build log for successful application of
+0093/0094 and confirm the kernel artifact contains the registration marker
+before packaging. Do not poll Actions.
 
 ## Handoff update (2026-11-02: pthread FOGOS guard lacked board-config include)
 
