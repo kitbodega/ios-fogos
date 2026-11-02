@@ -1,0 +1,123 @@
+--- a/bsd/dev/sweet_ufs.c
++++ b/bsd/dev/sweet_ufs.c
+@@ -1,5 +1,5 @@
+ /*
+- * SWEET internal UFS root device.
++ * SWEET/FOGOS Qualcomm UFS root device.
+  *
+  * The Qualcomm UFS host (UFSHCI 2.1) is left enabled with the link up by the
+  * bootloader, which loaded our boot image from it. This driver reuses that
+@@ -14,11 +14,13 @@
+  * a 1 MiB bounce buffer); the host is not cache coherent, so caches are
+  * cleaned/invalidated around each command.
+  *
+- * Writes are refused unless boot-arg ufsrw=1 is set. Every write is checked
+- * against the partition bounds again right before it is issued, so nothing
+- * outside the named partition can be written.
++ * SWEET may opt into writes with ufsrw=1. The FOGOS build never enables
++ * writes. Every write is checked against the partition bounds again before
++ * it is issued.
+  */
+-#if defined(ARM64_BOARD_CONFIG_SWEET)
++#include <pexpert/arm64/board_config.h>
++
++#if defined(ARM64_BOARD_CONFIG_SWEET) || defined(ARM64_BOARD_CONFIG_FOGOS)
+ #include <sys/param.h>
+ #include <sys/systm.h>
+ #include <sys/buf.h>
+@@ -592,15 +594,22 @@
+ 	char want[64] = "userdata";
+ 	int error;
+ 
+-	if (SecureDTLookupEntry(NULL, "/sweet-ufs", &node) != kSuccess ||
++#if defined(ARM64_BOARD_CONFIG_FOGOS)
++	const char *ufs_node_path = "/fogos-ufs";
++#else
++	const char *ufs_node_path = "/sweet-ufs";
++#endif
++	if (SecureDTLookupEntry(NULL, ufs_node_path, &node) != kSuccess ||
+ 	    SecureDTGetProperty(node, "reg", (void const **)&reg, &size) != kSuccess ||
+ 	    size < 2 * sizeof(uintptr_t)) {
+-		printf("SWEET UFS: no /sweet-ufs node in the device tree\n");
++		printf("UFS: no board UFS node in the device tree\n");
+ 		return ENXIO;
+ 	}
+ 	PE_parse_boot_argn("ufsroot", want, sizeof(want));
+ 	uint32_t rw = 0;
++#if defined(ARM64_BOARD_CONFIG_SWEET)
+ 	PE_parse_boot_argn("ufsrw", &rw, sizeof(rw));
++#endif
+ 	uint32_t cache = 0, wait = 0;
+ 	PE_parse_boot_argn("ufscache", &cache, sizeof(cache));
+ 	PE_parse_boot_argn("ufswait", &wait, sizeof(wait));
+@@ -649,17 +658,23 @@
+ 	devfs_make_node(su.bdev, DEVFS_BLOCK, UID_ROOT, GID_OPERATOR, 0640, "ufsroot0");
+ 	devfs_make_node(makedev(su.cmajor, 0), DEVFS_CHAR, UID_ROOT, GID_OPERATOR, 0640, "rufsroot0");
+ 	/* Only now, with the partition bounds known, can writes be allowed. */
++#if defined(ARM64_BOARD_CONFIG_SWEET)
+ 	su.writable = (rw != 0);
++#else
++	su.writable = false;
++#endif
+ 	su.ready = true;
+-	printf("SWEET UFS: \"%s\" on LUN %u: first block 0x%llx, %llu MiB, %s, DMA at 0x%llx\n",
++	printf("UFS: \"%s\" on LUN %u: first block 0x%llx, %llu MiB, %s, DMA at 0x%llx\n",
+ 	    want, su.lun, su.first_block, su.nblocks * UFS_BLOCK >> 20,
+ 	    su.writable ? "read-write" : "read-only", su.dma_pa);
++#if defined(ARM64_BOARD_CONFIG_SWEET)
+ 	sweet_log_start();
+ 	sweet_sample_start();
+ 	/* Input drivers (HID services in iokit/Kernel/arm/hid/SweetHID.cpp). */
+ 	sweet_keys_init();
+ 	sweet_touch_init();
+ 	sweet_usb_probe();
++#endif
+ 	return 0;
+ }
+ 
+--- a/iokit/bsddev/IOKitBSDInit.cpp
++++ b/iokit/bsddev/IOKitBSDInit.cpp
+@@ -43,6 +43,7 @@
+ #include <vm/pmap.h>
+ #include <vm/vm_map.h>
+ #include <pexpert/pexpert.h>
++#include <pexpert/arm64/board_config.h>
+ #include <kern/clock.h>
+ #if CONFIG_KDP_INTERACTIVE_DEBUGGING
+ #include <kern/debug.h>
+@@ -766,7 +767,7 @@
+ 		}
+ 	}
+ 
+-#if defined(ARM64_BOARD_CONFIG_SWEET)
++#if defined(ARM64_BOARD_CONFIG_SWEET) || defined(ARM64_BOARD_CONFIG_FOGOS)
+ //
+ //	SWEET: root on a GPT partition of the internal UFS (bsd/dev/sweet_ufs.c)
+ //
+@@ -775,13 +776,25 @@
+ 		OSSafeReleaseNULL(matching);
+ 		int ufs_error = sweet_ufs_rootdev(root);
+ 		if (ufs_error) {
+-			panic("IOFindBSDRoot: SWEET UFS root %s unavailable: %d", rdBootVar, ufs_error);
++			panic("IOFindBSDRoot: UFS root %s unavailable: %d", rdBootVar, ufs_error);
+ 		}
+ 		strlcpy(rootName, rdBootVar, rootNameSize);
+ 		IOLog("BSD root: %s, major %d, minor %d\n", rootName, major(*root), minor(*root));
+ 		*oflags = 0;
+ 		goto iofrootx;
+ 	}
++#if defined(ARM64_BOARD_CONFIG_FOGOS)
++	{
++	uint32_t fogosUFSProbe = 0;
++	if (PE_parse_boot_argn("fogos-ufs-probe", &fogosUFSProbe, sizeof(fogosUFSProbe)) && fogosUFSProbe) {
++		extern int sweet_ufs_rootdev(dev_t *dev);
++		dev_t probeDev = (dev_t)0;
++		int probeError = sweet_ufs_rootdev(&probeDev);
++		IOLog("FOGOS UFS: read-only probe returned %d (device %d:%d)\n",
++		    probeError, major(probeDev), minor(probeDev));
++	}
++	}
++#endif
+ #endif
+ 
+ //

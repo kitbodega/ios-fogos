@@ -193,8 +193,15 @@ steps; that script was only read and must not be run for this bring-up.
   needs a fogos framebuffer/display path, touch input path, and correct power
   sequencing. The existing Goodix/GENI, SPMI and framebuffer drivers assume
   sweet hardware.
-- UFS controller registers, DMA constraints, partition layout, and bootloader
-  handoff need validation before a fogos UFS driver can be used.
+- UFS is now wired into the FOGOS ADT and the existing XNU UFSHCI root driver
+  is enabled for a read-only `rd=ufsroot0` path. It trusts only a controller
+  already left active by the bootloader, refuses operation when the host is
+  not ready or has outstanding requests, and never enables writes on FOGOS.
+  Hardware behavior and the bootloader's UFS handoff still need validation.
+  Pass `fogos-ufs-probe=1` to the XNU boot arguments to initialize the driver,
+  read the GPT and register `ufsroot0`, then continue without choosing it as
+  root. `rd=ufsroot0` selects it as root and must wait until `userdata` contains
+  the iOS image; the current Android userdata contents are not that image.
 - Both phones are ARM64 Qualcomm devices, but that alone does not establish
   compatible page sizes, CPU features, boot protocol or XNU driver support.
 
@@ -210,7 +217,7 @@ config fragment, and C/header/build files for these hardware paths:
 | Hardware | Linux source/config evidence | XNU work indicated |
 | --- | --- | --- |
 | GICv3 / Qualcomm MPM | `drivers/irqchip/irq-gic-v3.c`, `qcom-mpm-blair.c`; `CONFIG_ARM_GIC_V3=y` | Initialize the GIC from fogos DT data; route the virtual timer and IPIs through XNU's interrupt path. |
-| UFS | `drivers/scsi/ufs/ufshcd.c`, `ufshcd-pltfrm.c`, `ufs-qcom.c`; UFS/QTI config enabled | Implement an XNU UFSHCI path with the fogos handoff, clocks, reset and DMA behavior. |
+| UFS | Live DTB exposes `qcom,ufshc` at `0x04804000`; Qualcomm Linux UFS/QTI config is enabled | XNU has a FOGOS read-only path using the bootloader's existing UFSHCI link. Power-up/reset and link recovery remain unsupported; validate on-device before selecting `rd=ufsroot0`. |
 | Touch | `drivers/input/touchscreen/ilitek_v3_mmi/ilitek_v3_qcom.c` binds `tchip,ilitek`; `CONFIG_TOUCHSCREEN_ILITEK_CHIPSET=m`; stock `/proc/modules` confirms `ilitek_v3_mmi` is loaded | Reimplement the Ilitek bus/protocol and publish XNU HID events; Linux module itself cannot load in XNU. ADB is denied access to the `.ko` file. |
 | Display / DSI | `techpack/display/msm/dsi/dsi_panel.c`, `dsi_display.c`, `dsi_ctrl.c`, `dsi_phy.c`; `CONFIG_DRM_MIPI_DSI=y`, while `CONFIG_DRM_MSM` is disabled in this defconfig | Port only the DSI host and active panel initialization needed by XNU. Panel timings/commands are expected in the DTB/DTBO; the board-specific panel source was not found in this tree. |
 | Clocks / power | Blair GCC/dispcc/gpucc sources, RPMh, GENI, SPMI, regulators | Identify the minimum clocks, resets and power rails before bringing up UFS, DSI or touch. |

@@ -1,3 +1,11 @@
+## Handoff update (2026-11-02: FOGOS UFSHCI read-only root path implemented)
+
+Added patch `0088-fogos-ufs-readonly.patch`. It enables the existing UFSHCI/GPT BSD device for FOGOS, reads the board-specific `/fogos-ufs` ADT node at the stock live DTB's first UFS window `0x04804000+0x3000`, and wires `rd=ufsroot0` into `IOFindBSDRoot`. FOGOS forces the block device read-only regardless of `ufsrw`; SWEET's logger, sampler, touch, key and USB initialization remain SWEET-only. The driver reuses the UFS link only when the bootloader left HCE/link/transfer-list ready and no requests outstanding; it does not reset or power-sequence the controller.
+
+Added optional boot arg `fogos-ufs-probe=1`: calls the read-only driver to inspect the `userdata` GPT partition and reports `FOGOS UFS: read-only probe returned ...`, then continues normal root selection. The workflow now accepts a `boot_args` input so a diagnostic boot image can be packaged without selecting UFS as root. ADT generation and a `--dump` review show the new node with the expected compatible/address. Local XNU compile check via `tools/xnu-cc.py` passed for `bsd/dev/sweet_ufs.c` and `iokit/bsddev/IOKitBSDInit.cpp` (0/2 failed); patch reverse/apply dry run passed against the available 0083 buildtree.
+
+This is an untested-on-device handoff-reuse implementation, not full Qualcomm power-up/link recovery. No kernel CI build or Moto boot has been done for patch 0088 yet. The prepared iOS root image remains only in WSL ext4; Android userdata is still untouched. Do not use `rd=ufsroot0` until a separately confirmed operation puts the root image on userdata. Next: commit/push, dispatch FOGOS DEVELOPMENT kernel build, then package with `boot_args='debug=0xc serial=3 cpus=1 keepsyms=1 fogos-ufs-probe=1'` for a non-destructive phone test.
+
 ## Handoff update (2026-11-02: diagnostic boot markers all return)
 
 The user photo from the diagnostic image (package run `41394811024`, kernel run `41393303258`) shows all new markers: `root nub init returned 1`, `root nub attach returned`, `ConfigureIOKit returned`, and `IOKit matching returned 1`, followed by `SWEET: starting device-tree platform expert` and `SWEET: platform expert registered`. Thus IOKit initialization/configuration and the startIOServiceMatching call returned successfully. The display remains at the last log with a green rectangle; no panic is shown. This proves the stall occurs later in asynchronous service matching/startup or subsequent boot, but does not identify which service or prove a CPU deadlock. Next evidence should be a serial/panic capture beyond this point or additional per-service tracing. No partitions written.
@@ -60,7 +68,6 @@ The build copied all three source volumes, linked the cryptex files, and added t
 
 Critical next dependency: FOGOS XNU currently has no UFS controller/root driver, and the phone cannot mount this image yet. Do not write the image to userdata or any partition. Continue UFS driver/ADT bring-up and resolve the HFS checker behavior. No device partitions were written.
 
-# iOS 16 on sweet (Redmi Note 10 Pro, SM7150) - working notes
 
 ## New request: Moto G34 5G (`fogos`)
 
@@ -794,3 +801,4 @@ Review of `IMG_0301.MOV` shows the scrolling panic console works: the final scre
 
 
 
+# iOS 16 on sweet (Redmi Note 10 Pro, SM7150) - working notes

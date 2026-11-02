@@ -22,6 +22,9 @@ on:
       kernel_run_id:
         description: successful FOGOS kernel workflow run whose artifact to package
         default: "41363602897"
+      boot_args:
+        description: kernel boot arguments (add fogos-ufs-probe=1 for the read-only UFS probe)
+        default: "debug=0xc serial=3 cpus=1 keepsyms=1"
   push:
     branches: [main]
     paths:
@@ -47,6 +50,8 @@ jobs:
   fogos-shim:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
+    env:
+      FOGOS_BOOT_ARGS: ${{ inputs.boot_args || 'debug=0xc serial=3 cpus=1 keepsyms=1' }}
     steps:
       - uses: actions/checkout@v4
       - name: Install AArch64 build tools
@@ -66,7 +71,8 @@ jobs:
           python3 tools/mkadt.py dtb/fogos-moto-g34.adt --fogos
           python3 tools/mkpayload.py \
             research/fogos-ci/kernel/kernel.development.fogos \
-            dtb/fogos-moto-g34.adt shim/out/fogos-payload.bin --fogos
+            dtb/fogos-moto-g34.adt shim/out/fogos-payload.bin --fogos \
+            --cmdline "$FOGOS_BOOT_ARGS"
       - name: Build no-framebuffer FOGOS boot image
         run: bash shim/build.sh --fogos shim/out/fogos-payload.bin
       - name: Verify v3 package and embedded payload

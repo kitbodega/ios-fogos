@@ -54,6 +54,8 @@ FOGOS_TIMEBASE, FOGOS_VTIMER_INTID = 19200000, 19
 FOGOS_ECID = 0x464F474F53000001  # 'FOGOS' + 1, synthetic; never a device serial
 FOGOS_FB, FOGOS_FB_SIZE = 0x85200000, 0x00c00000
 FOGOS_FB_W, FOGOS_FB_H, FOGOS_FB_STRIDE = 720, 1600, 720 * 4
+# The live SM6375 DTB's ufshc@4804000 register window (ufs_mem).
+FOGOS_UFS, FOGOS_UFS_SIZE = 0x04804000, 0x3000
 
 BOOT_MANIFEST_HASH = hashlib.sha384(b'sweet boot manifest').digest()
 
@@ -250,6 +252,11 @@ def build(seed=None, qemu=False, highmem=False, fogos=False):
         ('compatible', cstr('qcom,ufshc')),
         ('reg', u64(UFS, UFS_SIZE)),
     ])
+    fogos_ufs = node('fogos-ufs', [
+        ph(),
+        ('compatible', cstr('qcom,ufshc')),
+        ('reg', u64(FOGOS_UFS, FOGOS_UFS_SIZE)),
+    ])
 
     # pmap_compute_max_asids requires the node even when no overrides are set.
     # An absent pmap-max-asids property selects XNU's own MAX_ASIDS default.
@@ -281,12 +288,11 @@ def build(seed=None, qemu=False, highmem=False, fogos=False):
         # while the board compatible strings continue to identify Moto FOGOS.
         compatible = cstr('D22AP') + cstr('iPhone10,3') + cstr('motorola,fogos') + cstr('qcom,sm6375') + cstr('AppleARM')
         model, target, subtype, manufacturer = 'iPhone10,3', 'D22', 'D22AP', 'Apple Inc.'
-        # FOGOS has no SWEET framebuffer or UFS shim node; expose only board
-        # discovery nodes needed by XNU and the PSCI conduit found in stock FDT.
+        # Keep board-specific framebuffer and UFS nodes distinct from SWEET.
         arm_io.children = [gic, node('psci', [ph(), ('compatible', cstr('arm,psci-1.0')),
                                              ('method', cstr('smc'))]),
                            node('wdt', [ph(), ('no-pmu', u32(1))])]
-        children = [chosen, defaults, cpus, arm_io, fogos_fbcon, buttons, pram] + product
+        children = [chosen, defaults, cpus, arm_io, fogos_fbcon, fogos_ufs, buttons, pram] + product
     else:
         compatible = cstr('D22AP') + cstr('iPhone10,3') + cstr('xiaomi,sweet') + cstr('qcom,sm7150') + cstr('AppleARM')
         model, target, subtype, manufacturer = 'iPhone10,3', 'D22', 'D22AP', 'Apple Inc.'
