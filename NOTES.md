@@ -1,3 +1,22 @@
+## Handoff update (2026-11-02: pthread provider missing at BSD startup)
+
+The latest boot photo shows the single-CPU and kperf fixes succeeded: XNU reaches
+`bsd_init`, initializes the MAC framework, then panics at
+`pthread_init()` (`bsd/pthread/pthread_shims.c:318`) because
+`pthread_functions` is still NULL. Source review of the buildtree for kernel run
+`41419799956` found the cause: the staged Apple `libpthread-514.100.2` built-in
+provider files and the 56-byte `ksyn_waitq_element` layout were guarded only by
+`ARM64_BOARD_CONFIG_SWEET`. FOGOS had include paths from patch 0084 but its
+provider translation units compiled empty, so no early startup registration
+called `pthread_kext_register()`.
+
+Added patch `0093-fogos-builtin-pthread-provider.patch` to enable the same
+version-matched built-in provider for FOGOS and reserve its matching kernel
+structure layout. The provider registers at `EARLY_BOOT` before `bsd_init`;
+this fixes the missing function table without bypassing the panic. The next
+step is a fresh FOGOS DEVELOPMENT kernel build, then package that exact kernel
+and test with temporary `fastboot boot`. No device partitions were modified.
+
 ## Handoff update (2026-11-02: VM/kperf image booted temporarily)
 
 After the user clarified that the phone was already in fastboot, successfully ran `fastboot boot research/fogos-ci/run-41415658320/fogos-boot/fogos-boot.img`. Fastboot reported `Sending 'boot.img' OKAY` and `Booting OKAY` (8.6 s). This is a temporary boot only; no partitions were flashed or written. Await the next screen photo/logs, especially `FOGOS: vm_set_restrictions begin/returned` and `FOGOS: kperf_init_early begin/returned`.
