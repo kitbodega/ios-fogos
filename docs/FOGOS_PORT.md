@@ -340,3 +340,6 @@ The FOGOS shim status console now renders its 8x16 font at 2x scale (previously 
 ## PRNG board-config visibility follow-up (2026-11-02)
 
 The user-provided photos show `PC=0`, `ESR=0x86000005`, `FAR=0`, `LR=0xfffffe0007454af4`, and saved `x8=0`. In matching kernel run `41372695593`, the LR is after `blr x8` in `_read_random`; x8 is loaded from `prng_funcs.refresh`. Thus the callback was absent. Patch 0014 now explicitly includes `<pexpert/arm64/board_config.h>` in both `prng_random.c` and `entropy.c` before the board-config conditionals, ensuring these translation units see the selected FOGOS target. Rebuild and exact-kernel packaging are needed before retry.
+## Early `read_random` provider fallback (2026-11-02)
+
+The final `IMG_0294.MOV` frame confirms a NULL indirect PRNG callback: PC 0, LR at the return point in `read_random`, ESR `0x86000005`, FAR 0. XNU already has `read_erandom()`, which uses the bootloader-seeded built-in HMAC-SHA256 DRBG while `prng_ready` is false. The bug is that `read_random()` invokes `prng_funcs.refresh` unconditionally. Patch 0014 now routes FOGOS calls through `read_erandom()` until registration sets `prng_ready`, then uses the normal PRNG callbacks. A fresh build and temporary boot are pending.

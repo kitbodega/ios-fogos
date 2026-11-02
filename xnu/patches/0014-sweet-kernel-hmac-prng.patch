@@ -172,6 +172,18 @@ diff --git a/osfmk/prng/prng_random.c b/osfmk/prng/prng_random.c
  
  	prng_funcs.reseed(prng_ctx, sizeof(seed), seed);
  	cc_clear(sizeof(seed), seed);
+@@ -431,5 +572,10 @@
+ read_random(void * buffer, u_int numbytes)
+ {
++#if defined(ARM64_BOARD_CONFIG_FOGOS)
++	if (!prng_ready) {
++		read_erandom(buffer, numbytes);
++		return;
++	}
++#endif
+ 	prng_funcs.refresh(prng_ctx);
+ 	read_random_generate(buffer, numbytes);
+ }
 diff --git a/osfmk/prng/entropy.c b/osfmk/prng/entropy.c
 --- a/osfmk/prng/entropy.c
 +++ b/osfmk/prng/entropy.c

@@ -742,3 +742,7 @@ What it took today (in order): 0058 HID services (Apple IOHIDFamily-1915 user cl
      cpu_init, before arm_vm_init.
   5. panic hook at top of panic_trap_to_debugger: va_copy + _doprnt(fmt, &copy, sweet_early_putc, 16).
   Verify with tools/xnu-cc.py (compile+symbols) and patch-order simulation before the single CI run.
+## Handoff update (2026-11-02: early read_random fallback)
+
+Frame review of `IMG_0294.MOV` confirms `read_random()` faults at the indirect `prng_funcs.refresh` call before the provider is available (`PC=0`, `LR=0xfffffe0007454af4`, `ESR=0x86000005`, `FAR=0`). Source inspection shows `read_erandom()` already selects the built-in HMAC-SHA256 early DRBG until `prng_ready`, but `read_random()` unconditionally calls the provider first. Updated patch 0014 to make FOGOS `read_random()` delegate to `read_erandom()` while `prng_ready` is false, then use the registered PRNG normally. The early DRBG is already seeded from bootloader entropy and is used by the allocator fallback. Next: commit/push and build; then package that exact kernel. No device writes.
+
