@@ -1,3 +1,7 @@
+## Handoff update (2026-11-02: IOLog diagnostic rebuild queued)
+
+After the photo lacked the patch 0089 markers, added `xnu/patches/0090-fogos-iokit-console-markers.patch` to route those same markers through `IOLog` instead of `printf`; this uses the same console logging call as the visible IOKit markers. Patch applies after 0089. Commit `0b56c46` is pushed. Dispatched a fresh FOGOS DEVELOPMENT kernel build, run `41412204571`. Do not poll; wait for the user to report completion, then package and temporary-boot it. Prior run `41410953077` was already downloaded and temporary-booted; its screen photo did not display the new markers. No partitions written.
+
 ## Handoff update (2026-11-02: latest photo still ends at platform expert)
 
 The user's latest photo again ends at `FOGOS: platform expert registered`; none of patch 0089's `PE_lockdown_iokit`/`bsd_init`/`setconf`/`vfs_mountroot` markers are visible. The `Image` artifact downloaded from package run `41410953077` contains all four new marker strings, confirming they were included in the packaged kernel file, but not proving that this exact image was the one photographed or that execution reached those statements. Treat the runtime result as inconclusive. Next, confirm the phone was showing the boot from `research/fogos-ci/run-41410953077/fogos-boot/fogos-boot.img`; if yes and the screen remains unchanged, instrument with output routed via `IOLog`/console at the earlier point because the new `printf` markers did not appear. No partitions written.
