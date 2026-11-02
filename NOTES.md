@@ -1,3 +1,6 @@
+## Handoff update (2026-11-02: FOGOS platform expert starts)
+
+User booted `research/fogos-ci/run-41392751804/fogos-boot.img` with temporary `fastboot boot`. Their screenshot shows `Platform: trust caches unavailable (Image4/AMFI not installed)`, then `No POST boot-arg set`, `SWEET: starting device-tree platform expert`, and `SWEET: platform expert registered`. The prior `Unable to find driver for this platform: D22AP` panic is gone; the platform expert's `start()` returned successfully. The photo contains no new panic. It ends immediately after registration, so whether XNU is stalled or merely quiet is undetermined. Next: request a new screen observation after allowing startup time or a photo/video if it remains unchanged; identify the next panic or last progress point. No partition writes. Latest platform expert source commit `3f773be`; build run `41391957496`; shim package `41392751804`.
 Build dispatched: run `41391957496` on commit `3f773be` in `kitbodega/ios-sweet`, with `machine_config=FOGOS`, DEVELOPMENT. The first dispatch targeted upstream `dipa-studio/ios-sweet` and was rejected (HTTP 403, repository admin required); rerun against the fork succeeded. Do not poll Actions; wait for the user to report completion. If successful, package this exact kernel through shim-only and let the user boot it temporarily. No partition writes.
 ## Handoff update (2026-11-02: FOGOS platform expert matching)
 
@@ -765,6 +768,7 @@ Frame review of `IMG_0294.MOV` confirms `read_random()` faults at the indirect `
 ## Handoff update (2026-11-02: 0014 PRNG patch hunk counts fixed)
 
 Review of `IMG_0301.MOV` shows the scrolling panic console works: the final screen retains the full dump, but panic remains PC 0, LR `0xfffffe0007454af4`, ESR `0x86000005`, FAR 0. Downloaded matching kernel from run `41385827184`; disassembly of `_read_random` still unconditionally calls the NULL `prng_funcs.refresh`. Its buildtree `osfmk/prng/prng_random.c` is the unpatched upstream text. Root cause: patch 0014 had malformed hunk counts (startup addition declared +140, actual +141; early `read_random` hunk declared +10, actual +11), so patch application discarded it. Corrected counts and new hunk offsets in commit `984b39c`; kernel build run `41388733349` reported complete by user. Shim-only packaging dispatched as run `41389580376` with that exact kernel ID. Do not use older kernels. User prefers no polling.
+
 
 
 
