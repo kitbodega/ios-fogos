@@ -1,3 +1,7 @@
+## Handoff update (2026-11-02: latest diagnostic package ready; phone not visible to ADB)
+
+Downloaded `fogos-boot.img` from packaging run `41415658320` to `research/fogos-ci/run-41415658320/fogos-boot/fogos-boot.img`. Attempted `adb reboot bootloader` with local Platform Tools; it returned `no devices/emulators found`. Direct `fastboot boot` waited for a device and was canceled before sending anything. Retried with Motorola RSA's bundled ADB; it reported adb server/client version mismatch (41 vs 40), restarted the server, and still found no devices. No boot image was sent and no partition was written. Need the USB device to enumerate to ADB (authorize USB debugging / reconnect cable or port); once `adb devices` shows `device`, reboot to bootloader and run the downloaded image with `fastboot boot`.
+
 ## Handoff update (2026-11-02: VM/kperf diagnostic package queued)
 
 The user reports diagnostic kernel run `41414484989` built successfully. Dispatched shim-only packaging run `41415658320` with read-only UFS probe arguments. Do not poll Actions. When the user reports packaging complete, download `fogos-boot` and use temporary `fastboot boot`; no partitions written.
