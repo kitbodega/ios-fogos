@@ -1,12 +1,12 @@
 ## Handoff update (2026-11-02: build runner switched back to macos-15-intel)
 
-Run `41502001671` for commit `4271962` was queued on `macos-15`; the user's
-latest request is to change runners again. Changed `.github/workflows/xnu.yml`
-back to `runs-on: macos-15-intel`, which completed prior FOGOS kernel builds.
-Pushing this change will create a replacement run and cancel the queued
-predecessor through workflow concurrency. Await the new run; do not use the
-old push run's shim artifact because it used fallback kernel `41405380749`.
-No device partitions were written.
+Run `41502001671` for commit `4271962` was queued on `macos-15`; per the user's
+request, changed `.github/workflows/xnu.yml` back to `runs-on: macos-15-intel`
+in commit `93f6884`, a runner that completed prior FOGOS kernel builds. New
+run `41502908861` is queued on `macos-15-intel`; predecessor `41502001671` is
+cancelled. Do not use the old push run's shim artifact because it used fallback
+kernel `41405380749`. Await build completion. No device partitions were
+written.
 
 ## Handoff update (2026-11-02: root-selection panic identified)
 
