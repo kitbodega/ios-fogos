@@ -299,3 +299,10 @@ FOGOSXNU command line. Shim-only run `41369104252` succeeded with the new
 argument and same kernel. The workaround image has not been booted: the phone
 stopped enumerating over USB after the panic. Restart it into fastboot before
 using `fastboot boot`; do not flash it.
+
+The user subsequently booted the workaround image temporarily: fastboot
+identified `fogos` and returned `Sending OKAY` / `Booting OKAY` for
+`research/fogos-ci/run-41369104252/fogos-boot.img`. After 30 seconds neither
+ADB nor fastboot enumerated over USB. This alone does not show whether the
+progress-bar panic is gone; await the screen photo/description. No partition
+was written.

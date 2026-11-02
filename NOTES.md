@@ -8,7 +8,7 @@ The first shim photo showed a successful transfer to XNU entry `0x18147b488`. Pa
 
 The first boot with that kernel (`41368754050` package) reached `PE_init_iokit` and showed `pe_init.c:314 Assertion Failed: *delta >= 0`. Source inspection identifies the cause: the macOS-targeted XNU build turns on the progress bar by default, but FOGOS leaves Apple `boot_args.Video` zero; the progress offset loop underflows. Commit `568ab6b` makes `tools/mkpayload.py --fogos` append `-noprogress`. Offline payload verification passed. Shim-only CI run `41369104252` successfully packaged this argument with the same kernel; boot image SHA-256 `86fa263e6f8a43212c3c4672e9574529e1f33d7494935c25be2e61144f759b92`.
 
-The workaround image has not been booted yet. After the panic, USB no longer enumerated in ADB or fastboot. Ask the user to restart into the bootloader and reconnect; then use only `fastboot boot research/fogos-ci/run-41369104252/fogos-boot.img`. No partition was written. Latest source/docs commit `19b350a` is pushed to `fork/fogos-port-init`.
+The user restarted into fastboot and the workaround image was booted with `fastboot boot` on product `fogos`; both `Sending` and `Booting` returned `OKAY`. After 30 seconds USB no longer enumerated in ADB or fastboot. The latest screen result/photo is pending; do not assume the same panic recurred. No partition was written. Latest source/docs commit `19b350a` is pushed to `fork/fogos-port-init`.
 
 ### Handoff update (2026-11-02: first complete FOGOS build analyzed)
 
