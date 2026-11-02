@@ -1276,3 +1276,8 @@ Review of `IMG_0301.MOV` shows the scrolling panic console works: the final scre
 - `fastboot boot research/fogos-ci/run-41510236241/fogos-boot/fogos-boot.img` completed: Sending 16144 KB `OKAY`; Booting `OKAY`.
 - **Still awaiting device result:** check whether the kernel now gets past HFS journal initialization and mounts `userdata`. If it still fails, capture the new mount log; do not repeat the 16 GiB userdata write.
 
+
+## Handoff update (2026-11-02: root mounted; FOGOS unsealed-root guard added)
+
+The latest photo now shows a later failure: `rootvp not authenticated after mounting @bsd_init.c:960`. Since the earlier HFS journal-write error is gone and this panic happens after the root-mount path, HFS mounting progressed; this is XNU's sealed-root authentication check, not POSIX ownership or mode bits. Existing patch `0029-sweet-unsealed-root-volume.patch` allowed an unsealed root only for SWEET. Extended its board guard to FOGOS and added a FOGOS-specific diagnostic so the bring-up kernel can continue when `FSIOC_KERNEL_ROOTAUTH` fails. This does not implement Apple's volume seal or grant file permissions; it is an unsigned development bring-up bypass. Patch hunk counts were checked (9 old / 24 new lines). Pushed in the next commit; await the FOGOS kernel build, then package that exact kernel and temporarily boot it. The next boot may reveal another root-filesystem limitation.
+
