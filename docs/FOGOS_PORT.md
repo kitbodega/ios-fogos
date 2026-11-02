@@ -231,10 +231,9 @@ sequencing and protocol study and must be reimplemented for XNU.
 3. The FOGOS board target and ADT v1 now exist. Keep the SWEET defaults intact.
    Recheck the ADT's high-bank physical destination against the Android
    initrd address in the bootloader handoff before using it.
-4. Add a no-framebuffer FOGOS shim profile and early diagnostic path, then
-   build the temporary boot image. Only after auditing the handoff should a
-   test use `fastboot boot`; do not flash boot, recovery, modem, persist, or
-   alter GPT.
+4. The no-framebuffer shim and Android v3 package path exist. Link and verify
+   the image in CI, then test only with temporary `fastboot boot`; do not flash
+   boot, recovery, modem, persist, or alter GPT.
 5. Bring up storage read-only first, then display/input and only later an iOS
    root image. Any userdata erase requires a separate explicit confirmation.
 
@@ -253,7 +252,10 @@ stock `vendor_boot` for its DTB. The stock generic ramdisk is also gzip, and
 the vendor_boot DTB address is `0x01f00000`. The matching FOGOS kernel plus
 ADT produced a 16,357,216-byte payload, and all six shim C translation units
 compile with WSL Clang for AArch64 and `-Werror`. The available WSL lacks GNU
-cross-link and Android image tools, so CI is being used to link and validate
-the final package. A successful image build still does not prove ABL accepts
+cross-link tools, so CI is being used to link and validate the final package.
+`tools/mkbootv3.py` writes the minimal v3 header and aligned kernel/ramdisk
+sections without relying on the Ubuntu `mkbootimg` package, whose Python entry
+point failed to import its `gki` module in CI. A successful image build still
+does not prove ABL accepts
 `fastboot boot`; no partition has been written and no XNU boot has been
 attempted.

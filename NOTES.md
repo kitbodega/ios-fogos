@@ -82,10 +82,12 @@ empty cpio ramdisk and leaves stock vendor_boot untouched. The FOGOS profile
 leaves Video zero, skips SWEET's UFS and console, and parks if its embedded
 payload is missing. Workflow `xnu.yml` now has `shim_only` and
 `kernel_run_id` inputs and builds/verifies/uploads a v3 package on Ubuntu.
-The local WSL Clang compile for six AArch64 C files passed with `-Werror`; CI
-must validate GNU linking and `mkbootimg`. `fastboot boot` behavior with the
-stock vendor_boot still needs device validation; no partition write or XNU
-boot has occurred.
+The local WSL Clang compile for six AArch64 C files passed with `-Werror`. CI
+is validating GNU linking and the custom `tools/mkbootv3.py` packer; the Ubuntu
+`mkbootimg` entry point failed with `ModuleNotFoundError: gki` in run
+41366311883, so the package dependency was removed. `fastboot boot` behavior
+with stock vendor_boot still needs device validation; no partition write or
+XNU boot has occurred.
 
 ### Handoff update (2026-11-01, evening: first FOGOS build reaches the compiler path)
 

@@ -55,9 +55,8 @@ if [ "$PROFILE" = fogos ]; then
 	# Android v3 keeps the DTB and vendor ramdisk in the existing vendor_boot
 	# partition. The payload is embedded in Image so it does not rely on the
 	# concatenated (compressed) initramfs layout.
-	mkbootimg --header_version 3 --kernel out/Image --ramdisk out/ramdisk.bin \
-		--os_version 15.0.0 --os_patch_level 2025-06 \
-		--cmdline "console=null" -o out/fogos-boot.img
+	python3 ../tools/mkbootv3.py out/Image out/ramdisk.bin out/fogos-boot.img \
+		--os-version 15.0.0 --os-patch-level 2025-06 --cmdline "console=null"
 	ls -l out/Image out/fogos-boot.img
 	exit 0
 fi

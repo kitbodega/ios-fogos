@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Pack an xnu kernel Mach-O + ADT into the payload the sweet shim boots.
 
-  mkpayload.py KERNEL ADT OUT [--cmdline "..."] [--ramdisk IMAGE]
+  mkpayload.py KERNEL ADT OUT [--cmdline "..."] [--ramdisk IMAGE] [--fogos]
 
 The kernel is linked as a PIE with LC_DYLD_CHAINED_FIXUPS. Nobody else
 (no kmutil, no iBoot) resolves those for us, and xnu only rebases static
@@ -24,7 +24,8 @@ Payload layout (little endian, all offsets from payload start):
 kernel_end past it, so the shim needs no changes: the image lands below the
 ADT and boot_args, inside topOfKernelData (never handed to the VM), and the
 ADT gets /chosen/memory-map "RAMDisk" = <phys, size> for IOFindBSDRoot to
-turn into md0 (boot with rd=md0).
+turn into md0 (boot with rd=md0). --fogos changes the payload magic so the
+FOGOS shim can identify it inside its embedded Image section.
 """
 import argparse, os, struct, sys
 

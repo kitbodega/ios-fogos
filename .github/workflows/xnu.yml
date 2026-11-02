@@ -52,7 +52,7 @@ jobs:
       - name: Install AArch64 build tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu cpio mkbootimg
+          sudo apt-get install -y gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu cpio
       - uses: actions/download-artifact@v4
         with:
           name: xnu-kernel
@@ -81,6 +81,7 @@ jobs:
           assert struct.unpack_from('<I', image, 40)[0] == 3
           assert struct.unpack_from('<I', image, 20)[0] == 1580
           assert kernel_size == len(kernel)
+          assert kernel[56:60] == b'ARMd'
           assert kernel[64:].find(b'FOGOSXNU') >= 0
           ramdisk_off = 4096 + ((kernel_size + 4095) // 4096 * 4096)
           assert image[ramdisk_off:ramdisk_off + 2] == b'\x1f\x8b'
