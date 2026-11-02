@@ -16,6 +16,8 @@ structure layout. The provider registers at `EARLY_BOOT` before `bsd_init`;
 this fixes the missing function table without bypassing the panic. The next
 step is a fresh FOGOS DEVELOPMENT kernel build, then package that exact kernel
 and test with temporary `fastboot boot`. No device partitions were modified.
+Committed and pushed as `9ff8eb1`; kernel build run `41423543669` is now
+running. Wait for the user's completion report; do not poll Actions.
 
 ## Handoff update (2026-11-02: VM/kperf image booted temporarily)
 
