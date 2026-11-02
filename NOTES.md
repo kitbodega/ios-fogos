@@ -13,10 +13,10 @@ units. Prior FOGOS bring-up fixes (including PRNG) needed that explicit include
 for the same guard. Added patch `0094-fogos-include-board-config-for-pthread.patch`
 to include it before all three provider guards and before the matching
 `ksyn_waitq_element` layout guard. The next kernel build will use the requested
-`macos-15` runner. The previous image was temporary; no partitions written.
-Patch commit `8f0c73d` is pushed. FOGOS DEVELOPMENT kernel build run
-`41427047050` was dispatched on `macos-15`; wait for the user to report its
-result and do not poll Actions.
+`macos-15-intel` runner. The previous image was temporary; no partitions
+written. Patch commit `8f0c73d` is pushed. Kernel run `41427047050` was
+dispatched on `macos-15`, then replaced at the user's request with an
+`macos-15-intel` build; see the newest handoff entry above.
 
 ## Handoff update (2026-11-02: runner switched to macos-15; pthread panic persists)
 

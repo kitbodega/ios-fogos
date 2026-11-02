@@ -109,7 +109,7 @@ jobs:
     # IORPC ABI) is retired on 2026-11-02. macos-15 ships Xcode 16.0-16.4 and
     # 26.x only; the oldest Xcode is selected below and the iig output is
     # checked against the xnu-8796 IORPC ABI.
-    runs-on: macos-15
+    runs-on: macos-15-intel
     timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
