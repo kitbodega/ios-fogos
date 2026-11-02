@@ -1,3 +1,20 @@
+## Handoff update (2026-11-02: pthread FOGOS guard lacked board-config include)
+
+The boot image from package run `41425943333` still panicked in
+`pthread_init()`. Inspected the exact packaged `Image`: it contains the panic
+string and the FOGOS CPU marker, but neither `FOGOS: built-in
+libpthread-514.100.2 registered` nor the SWEET provider marker. That confirms
+the provider registration code was not linked into the image, rather than
+merely being hidden by the screen output.
+
+Root cause: patches 0093 and 0019 tested `ARM64_BOARD_CONFIG_FOGOS` before
+including `<pexpert/arm64/board_config.h>` in the pthread provider translation
+units. Prior FOGOS bring-up fixes (including PRNG) needed that explicit include
+for the same guard. Added patch `0094-fogos-include-board-config-for-pthread.patch`
+to include it before all three provider guards and before the matching
+`ksyn_waitq_element` layout guard. The next kernel build will use the requested
+`macos-15` runner. The previous image was temporary; no partitions written.
+
 ## Handoff update (2026-11-02: runner switched to macos-15; pthread panic persists)
 
 The user's photo from temporary boot of package run `41425943333` still shows
