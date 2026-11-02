@@ -1,3 +1,19 @@
+## Handoff update (2026-11-02: UFS userdata located on Motorola LUN 4)
+
+The user's latest photo from temporary boot of package `41494933417` shows XNU
+passes `pthread_init`, reaches BSD root selection, then reports
+`UFS: no GPT partition named "userdata"` and
+`FOGOS UFS: read-only probe returned 2 (device 0:0)`. This is ENOENT, not a
+kernel panic. The stock Motorola ROM's `gpt.bin` contains six maps;
+`gpt_main4.bin` is `partition:4` and its GPT contains `userdata`. Inference:
+the phone's userdata is on UFS LUN 4, while the driver currently probes LUN 0.
+
+Updated `0088-fogos-ufs-readonly.patch` so FOGOS selects LUN 4 and SWEET keeps
+LUN 0. The FOGOS probe remains read-only. Next: apply-check the patch against
+the exact extracted XNU buildtree, then commit/push to `main`; its patch path
+triggers the next kernel build. Await user's build completion before packaging
+and temporarily booting. No partitions were written.
+
 ## Handoff update (2026-11-02: FOGOS UFS support compiled; package queued)
 
 User reports the push-triggered build completed. Identified successful FOGOS

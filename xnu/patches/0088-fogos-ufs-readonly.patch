@@ -142,7 +142,15 @@
  		return ENOMEM;
  	}
  	ppnum_t pn = pmap_find_phys(kernel_pmap, (addr64_t)su.dma);
-@@ -649,11 +658,17 @@
+@@ -617,2 +626,6 @@
+-	su.lun = 0;
++#if defined(ARM64_BOARD_CONFIG_FOGOS)
++	su.lun = 4;
++#else
++	su.lun = 0;
++#endif
+ 	su.secsize = DEV_BSIZE;
+@@ -649,11 +662,17 @@
  	devfs_make_node(su.bdev, DEVFS_BLOCK, UID_ROOT, GID_OPERATOR, 0640, "ufsroot0");
  	devfs_make_node(makedev(su.cmajor, 0), DEVFS_CHAR, UID_ROOT, GID_OPERATOR, 0640, "rufsroot0");
  	/* Only now, with the partition bounds known, can writes be allowed. */
