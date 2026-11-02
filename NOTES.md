@@ -1,3 +1,13 @@
+## Handoff update (2026-11-02: pthread fix package downloaded; fastboot USB failed)
+
+User reported shim package run `41431133551` complete. Downloaded its artifact
+to `research/fogos-ci/run-41431133551/fogos-boot/fogos-boot.img`. Attempted
+temporary `fastboot boot` twice: first failed with USB error 31; second failed
+with `AdbWriteEndpointSync` timeout 121 during image transfer. Fastboot never
+reported `Booting OKAY`, so this image has not been confirmed booted. No
+partition was written. Next: reconnect the cable/USB port, get the device back
+to fastboot mode, and retry the same image once connectivity is stable.
+
 ## Handoff update (2026-11-02: pthread fix build moved to Intel runner)
 
 Per user request, changed XNU build runner back to `macos-15-intel` in commit
