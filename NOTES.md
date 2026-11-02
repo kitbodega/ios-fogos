@@ -1,3 +1,16 @@
+## Handoff update (2026-11-02: runner switched to macos-15; pthread panic persists)
+
+The user's photo from temporary boot of package run `41425943333` still shows
+`pthread kernel extension not loaded (function table is NULL)` at
+`pthread_shims.c:318`. The expected `FOGOS: built-in libpthread-514.100.2
+registered` marker is absent, so patch 0093 has not demonstrated successful
+runtime registration. Do not treat this as a fixed panic or repeat the same
+image; inspect startup ordering/patch inclusion before another build.
+
+Per user request, changed `.github/workflows/xnu.yml` build runner from
+`macos-15-intel` to `macos-15`. No new run was dispatched yet. No device
+partitions were written.
+
 ## Handoff update (2026-11-02: FOGOS pthread image temporarily booted)
 
 User reported packaging run `41425943333` complete. Downloaded its `fogos-boot`
