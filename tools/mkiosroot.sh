@@ -10,9 +10,10 @@
 # /System/Cryptexes/{OS,App} link to; here they live inside the one volume.
 # Owners, modes, symlinks and hard links are preserved (rsync -aH as root).
 #
-# The volume is journaled (XNU replays the journal after a panic; Linux only
-# mounts it read-write with -o force and leaves the journal empty). Port
-# additions: /System/Library/Caches/com.apple.dyld hard-links the SystemOS
+# Keep the volume non-journaled while the FOGOS UFS path is read-only: XNU's
+# HFS mount initializes/replays a journal by writing to the device. Re-enable
+# journaling only after FOGOS UFS write support is implemented. Port additions:
+# /System/Library/Caches/com.apple.dyld hard-links the SystemOS
 # cryptex shared cache (ignition_level=1 looks there), and
 # /private/var/keybags/systembag.kb is the plain-plist system keybag that
 # keybagd reads with /defaults/no-effaceable-storage (tools/mkadt.py).
@@ -72,7 +73,7 @@ apfs_mount "$sysos" sysos
 apfs_mount "$appos" appos
 
 truncate -s "$size" "$out"
-mkfs.hfsplus -s -J -v iOSRoot "$out"
+mkfs.hfsplus -s -v iOSRoot "$out"
 mkdir "$work/root"
 sudo mount -t hfsplus -o loop,force "$out" "$work/root"
 mounts=("$work/root" "${mounts[@]}")

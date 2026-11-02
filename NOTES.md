@@ -1,3 +1,28 @@
+## Handoff update (2026-11-02: HFS journal write failure diagnosed)
+
+The user's latest boot photo shows the HFSX signature is accepted and
+`vfs_mountroot` begins, then HFS prints `Initializing the journal`,
+`write_journal_header` failure, `hfs_late_journal_init returned (22)`, and
+`mount failure 22`; BSD reports `cannot mount root, errno=19`. This is the
+journal initialization write failing, not a bad HFSX signature. FOGOS UFS is
+read-only, so it returns I/O error `strategy err 0x1e` for the journal-header
+write. The source image was made journaled by `tools/mkiosroot.sh` using `-J`.
+
+Prepared a no-journal variant in WSL by clearing `kHFSVolumeJournaledMask`
+(`0x2000`) in both HFSX headers of
+`/root/fogos-ios-root-work/fogos-ios-16.6.1-root-checked.img`; original
+`fogos-ios-16.6.1-root.img` remains unchanged. `fsck.hfsplus -f -n` now says
+“Checking non-journaled HFS Plus Volume,” detects a case-sensitive volume,
+and reports “The volume iOSRoot appears to be OK.” Updated `tools/mkiosroot.sh`
+to create future bring-up images without `-J`, until UFS write support exists.
+
+The phone still contains the journaled image; the modified local headers have
+not yet been applied to the phone. Next: return to TWRP, verify the two current
+volume-header attributes, clear only their `0x2000` journal bit (primary byte
+offset 1028; alternate header byte offset 17179868164), sync, then boot the
+same temporary image from run `41510236241`. This needs only two 4-byte writes
+to existing `userdata`; no repartition or other partition write.
+
 ## Handoff update (2026-11-02: HFSX root installed; temporary XNU boot accepted)
 
 After the user removed the PIN, TWRP 3.7.1_12-Fogos returned as root ADB.
