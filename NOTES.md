@@ -1284,3 +1284,7 @@ The latest photo now shows a later failure: `rootvp not authenticated after moun
 
 Build tracking: push commit `d760d906e1e6f3e571c55dbf030681483c886d05` started XNU run `41527104699` on `kitbodega/ios-fogos`; it was queued on the `main` branch when checked. The concurrent push-triggered shim job uses the workflow's old default kernel run ID, so ignore its boot artifact. After kernel run 41527104699 succeeds, dispatch shim-only packaging with that exact kernel run ID.
 
+
+## Handoff update (2026-11-02: explicit read-only UFS root selection package)
+
+The prior shim package run `41530081516` used kernel run `41527104699` but omitted `rd=ufsroot0`; its screen reached generic `Apple_HFS` root matching. User clarified `userdata` already exists and had been detected/read in read-only mode. Built and verified shim-only package run `41530896646` from kernel `41527104699` with `debug=0xc serial=3 cpus=1 keepsyms=1 rd=ufsroot0`; the embedded Image contains `rd=ufsroot0`. Downloaded image: `research/fogos-ci/run-41530896646/fogos-boot/fogos-boot.img` (16,531,456 bytes). No partitions were written. Host currently sees neither ADB nor fastboot, so this image has not yet been booted. Resume when the user returns the phone to fastboot; then temporarily boot this image and capture the mountroot result. FOGOS UFS remains read-only.
