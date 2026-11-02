@@ -10,6 +10,10 @@ On the user's `boot` request, retried `adb reboot bootloader` with Platform Tool
 
 Downloaded `fogos-boot.img` from packaging run `41415658320` to `research/fogos-ci/run-41415658320/fogos-boot/fogos-boot.img`. Attempted `adb reboot bootloader` with local Platform Tools; it returned `no devices/emulators found`. Direct `fastboot boot` waited for a device and was canceled before sending anything. Retried with Motorola RSA's bundled ADB; it reported adb server/client version mismatch (41 vs 40), restarted the server, and still found no devices. No boot image was sent and no partition was written. Need the USB device to enumerate to ADB (authorize USB debugging / reconnect cable or port); once `adb devices` shows `device`, reboot to bootloader and run the downloaded image with `fastboot boot`.
 
+## Handoff update (2026-11-02: XNU build moved to Intel macOS runner)
+
+Per user request, changed `.github/workflows/xnu.yml` from `runs-on: macos-15` to the valid Intel label `macos-15-intel`, commit `cf9b61b`. Submitted cancellation for queued run `41418097593` and dispatched replacement FOGOS DEVELOPMENT build `41419799956` on the updated branch. Do not poll. If the user reports it compiled, package that exact kernel artifact; ignore the canceled run's shim artifact, which used the old default kernel. No device writes.
+
 ## Handoff update (2026-11-02: kernel runner queue; shim artifact is stale)
 
 One read-only status query of workflow run `41418097593` showed the kernel `build` job still `queued` with no steps started; the separate `fogos-shim` job completed successfully but downloaded its default kernel artifact `41405380749`, not the new 0092 kernel (which has not built yet). Do not boot/use that same-run shim artifact as the new driver. GitHub's current public runner docs list `macos-15` as a valid standard arm64 label; GitHub status page reported Actions operational on Nov 2. Do not poll repeatedly or trigger another run. Resume when the macOS `build` job starts/completes.
