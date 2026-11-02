@@ -1328,3 +1328,7 @@ Build run `41542902912` applied patches `0035`, `0036`, `0050`, and `0097`, then
 ## Handoff update (2026-11-02: FOGOS AMFI build booted)
 
 Kernel run `41545243026` succeeded on commit `5eccbe99f09a161cca38d621bb631002169b95b9`; AMFI patch `0050` now compiles for FOGOS. Shim-only package run `41546848533` succeeded using that exact kernel with `debug=0xc serial=3 cpus=1 keepsyms=1 rd=ufsroot0` (no `unentitled_ios_sim_launch=1`). Verified the embedded Image contains the boot args. Temporary `fastboot boot` of `research/fogos-ci/run-41546848533/fogos-boot.img` was accepted by device `ZY32JNZ8K2` (Sending OKAY, Booting OKAY). No partitions were written. Await the next screen/photo to see whether userspace passes platform-binary validation and how far the root boot proceeds.
+
+## Handoff update (2026-11-02: retry with iOS-on-OSX development boot arg)
+
+Package `41546848533` booted with kernel `41545243026` but omitted `unentitled_ios_sim_launch=1`; the phone returned to the known OSX DEVELOPMENT kernel gate in `kern_exec.c` (`EXEC_EXIT_REASON_WRONG_PLATFORM`, namespace 9/code 14), not a new AMFI regression. Repackaged the same exact kernel as run `41547658272` with `debug=0xc serial=3 cpus=1 keepsyms=1 rd=ufsroot0 unentitled_ios_sim_launch=1`; verified the embedded Image argument and temporarily booted it on `ZY32JNZ8K2` (Sending/Booting OKAY). No partitions were written. Await the next screen/photo; this should pass the launchd spawn gate and let us inspect the next boot check.
