@@ -29,7 +29,7 @@ on:
       - ".github/workflows/xnu.yml"
 
 concurrency:
-  group: xnu-${{ github.ref }}
+  group: xnu-${{ github.ref }}-${{ inputs.shim_only == true && 'shim' || 'kernel' }}
   cancel-in-progress: true
 
 env:
