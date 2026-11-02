@@ -1,0 +1,20 @@
+diff --git a/iokit/Kernel/IOService.cpp b/iokit/Kernel/IOService.cpp
+--- a/iokit/Kernel/IOService.cpp
++++ b/iokit/Kernel/IOService.cpp
+@@ -5188,14 +5188,14 @@
+ 	bool unhide;
+ 
+ 	ioblockstoragedriverClass = OSMetaClass::getMetaClassWithName(gIOBlockStorageDriverKey);
+-#if defined(ARM64_BOARD_CONFIG_SWEET)
++#if defined(ARM64_BOARD_CONFIG_SWEET) || defined(ARM64_BOARD_CONFIG_FOGOS)
+ 	/*
+-	 * SWEET has no IOStorageFamily, so no service can be a block storage
++	 * SWEET and FOGOS have no IOStorageFamily, so no service can be a block storage
+ 	 * driver: the root (e.g. a RAM disk) is not block media, as for image boot.
+ 	 */
+ 	if (!ioblockstoragedriverClass) {
+ 		root = NULL;
+ 	}
+ #else
+ 	assert(ioblockstoragedriverClass);
+ #endif

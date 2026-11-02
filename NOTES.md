@@ -1,3 +1,15 @@
+## Handoff update (2026-11-02: root-selection panic identified)
+
+The follow-up photo after temporary package `41500341017` shows
+`BSD root: ufsroot0, major 1, minor 0`, then panics at
+`IOService.cpp:5200: assert(ioblockstoragedriverClass)`. In the exact XNU source,
+`IOService::setRootMedia()` asserts that `IOBlockStorageDriver` exists on all
+boards except SWEET. FOGOS has no `IOStorageFamily`, so this is the same
+missing-storage-family case the SWEET branch already handles. Added patch
+`0095-fogos-no-iostoragefamily-root-assert.patch` to apply that guard to FOGOS;
+next apply-check it against the prior buildtree, commit/push, then build and
+temporarily boot. UFS remains read-only; no device data was changed.
+
 ## Handoff update (2026-11-02: read-only root-selection image booted)
 
 User reports shim-only package run `41500341017` complete. Downloaded
