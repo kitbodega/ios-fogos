@@ -1281,3 +1281,6 @@ Review of `IMG_0301.MOV` shows the scrolling panic console works: the final scre
 
 The latest photo now shows a later failure: `rootvp not authenticated after mounting @bsd_init.c:960`. Since the earlier HFS journal-write error is gone and this panic happens after the root-mount path, HFS mounting progressed; this is XNU's sealed-root authentication check, not POSIX ownership or mode bits. Existing patch `0029-sweet-unsealed-root-volume.patch` allowed an unsealed root only for SWEET. Extended its board guard to FOGOS and added a FOGOS-specific diagnostic so the bring-up kernel can continue when `FSIOC_KERNEL_ROOTAUTH` fails. This does not implement Apple's volume seal or grant file permissions; it is an unsigned development bring-up bypass. Patch hunk counts were checked (9 old / 24 new lines). Pushed in the next commit; await the FOGOS kernel build, then package that exact kernel and temporarily boot it. The next boot may reveal another root-filesystem limitation.
 
+
+Build tracking: push commit `d760d906e1e6f3e571c55dbf030681483c886d05` started XNU run `41527104699` on `kitbodega/ios-fogos`; it was queued on the `main` branch when checked. The concurrent push-triggered shim job uses the workflow's old default kernel run ID, so ignore its boot artifact. After kernel run 41527104699 succeeds, dispatch shim-only packaging with that exact kernel run ID.
+
