@@ -239,17 +239,21 @@ sequencing and protocol study and must be reimplemented for XNU.
    root image. Any userdata erase requires a separate explicit confirmation.
 
 The FOGOS kernel has compiled and linked, and ADT v1 has been generated and
-parsed locally. The shim now has a compile-time FOGOS profile: console writes
-are inert, its SWEET UFS probe and diagnostics are skipped, failed payload
-lookup parks the CPU, and a `FOGOSXNU` payload leaves `boot_args.Video` zero.
-`tools/mkpayload.py --fogos` writes that marker while preserving the SWEET
-default. `shim/build.sh --fogos [payload]` builds only the shim Image; it
-deliberately does not package it into a boot image because the Moto v3
-boot/vendor_boot handoff has not yet been audited. The six C translation units
-compile cleanly with WSL Clang targeting `aarch64-none-elf` and `-Werror`; the
-existing FOGOS kernel plus ADT also produced a 16,357,216-byte test payload
-whose marker was verified. The local environment lacks the configured GNU
-cross-linker and `mkbootimg`, so the shim ELF/Image and boot image have not
-been linked or packaged. No device boot was attempted. Next: cross-link with
-the project toolchain in CI, audit the actual initrd/RAM handoff and
-vendor_boot use, then package only after those checks.
+parsed locally. The shim FOGOS profile makes console writes inert, skips
+SWEET's UFS probe and diagnostics, parks on a missing payload, and leaves
+`boot_args.Video` zero. `tools/mkpayload.py --fogos` marks the payload
+`FOGOSXNU`. Android's boot v3 separates the DTB/vendor ramdisk into
+`vendor_boot`; the stock files confirm v3, 4-KiB pages, and a 731,371-byte
+gzip vendor ramdisk. AOSP's bootloader contract places the generic ramdisk
+immediately after the vendor ramdisk and requires matching compression, so
+the kernel/ADT payload is embedded into the shim `Image` instead of being
+looked up at initrd start. FOGOS packaging uses a gzip-compressed empty cpio
+ramdisk and a v3 `boot.img`; fastboot boot must continue to use the untouched
+stock `vendor_boot` for its DTB. The stock generic ramdisk is also gzip, and
+the vendor_boot DTB address is `0x01f00000`. The matching FOGOS kernel plus
+ADT produced a 16,357,216-byte payload, and all six shim C translation units
+compile with WSL Clang for AArch64 and `-Werror`. The available WSL lacks GNU
+cross-link and Android image tools, so CI is being used to link and validate
+the final package. A successful image build still does not prove ABL accepts
+`fastboot boot`; no partition has been written and no XNU boot has been
+attempted.

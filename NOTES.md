@@ -69,24 +69,23 @@ for panic log), GICD/GICR offsets resolving to physical `0x0f200000` and
 The iOS root's D22AP model identity is retained, with FOGOS/SM6375 board
 compatibles. The Apple `/product` node is absent because its source DeviceTree
 artifact is not in the checkout. This ADT is for XNU bring-up only: the current
-shim still fills SWEET framebuffer fields, FOGOS PSCI CPU-on is absent, and
-the initrd's physical address must be checked against the chosen RAM bank. Do
-not boot it with the current shim. Next: add a no-framebuffer shim profile and
-audit the Android boot/vendor_boot v3 handoff; keep stock partitions intact.
+FOGOS PSCI CPU-on is absent; the first test must use `cpus=1`. The original
+SWEET shim was unsafe for this ADT; the dedicated FOGOS profile is described
+below. Keep stock partitions intact.
 
-**FOGOS shim profile prepared:** `shim/build.sh --fogos [payload]` compiles
-with inert console calls and skips SWEET's UFS probe and diagnostics; a failed
-payload lookup parks the CPU. The payload tool accepts `--fogos` and stamps
-`FOGOSXNU`, which makes the shim leave `boot_args.Video` zero. The SWEET
-default remains unchanged. It intentionally builds only the shim `Image`, not
-a boot image: vendor_boot v3 integration and actual initrd placement have not
-been audited. All six C translation units compile cleanly with WSL Clang
-targeting `aarch64-none-elf` and `-Werror`; the existing FOGOS kernel and ADT
-also produced a 16,357,216-byte test payload with the expected marker. The
-local WSL lacks the configured GNU cross-linker and `mkbootimg`, so the shim
-ELF/Image and boot image are not built. Next: cross-link in CI, audit real
-handoff and vendor_boot use, then package only after those checks. No device
-boot was attempted.
+**FOGOS shim packaging:** stock `boot.img` and `vendor_boot.img` headers are
+v3; vendor_boot has a 4-KiB page, a 731,371-byte gzip ramdisk and DTB at
+`0x01f00000`. AOSP requires the generic ramdisk to be concatenated immediately
+after the vendor ramdisk with matching compression. The kernel/ADT payload is
+therefore embedded in the shim `Image`; the FOGOS boot image carries a gzip
+empty cpio ramdisk and leaves stock vendor_boot untouched. The FOGOS profile
+leaves Video zero, skips SWEET's UFS and console, and parks if its embedded
+payload is missing. Workflow `xnu.yml` now has `shim_only` and
+`kernel_run_id` inputs and builds/verifies/uploads a v3 package on Ubuntu.
+The local WSL Clang compile for six AArch64 C files passed with `-Werror`; CI
+must validate GNU linking and `mkbootimg`. `fastboot boot` behavior with the
+stock vendor_boot still needs device validation; no partition write or XNU
+boot has occurred.
 
 ### Handoff update (2026-11-01, evening: first FOGOS build reaches the compiler path)
 

@@ -85,21 +85,43 @@ static int fogos_payload(const char *m)
 
 typedef void (*xnu_entry_t)(uint64_t boot_args_pa);
 
+#ifdef FOGOS
+extern const uint8_t _fogos_payload_start[];
+extern const uint8_t _fogos_payload_end[];
+#endif
+
 const char *loader_boot(uintptr_t dtb)
 {
-	uint64_t rd_start, rd_end;
+	uintptr_t payload_start;
+	uint64_t payload_size;
 
+#ifdef FOGOS
+	(void)dtb;
+	payload_start = (uintptr_t)_fogos_payload_start;
+	payload_size = (uintptr_t)_fogos_payload_end - payload_start;
+#else
+	uint64_t rd_start, rd_end;
 	if (!fdt_chosen_u64(dtb, "linux,initrd-start", &rd_start) ||
 	    !fdt_chosen_u64(dtb, "linux,initrd-end", &rd_end))
 		return "no initrd in /chosen";
+	if (rd_end <= rd_start)
+		return "invalid initrd range";
 	con_hex2("INITRD", "lo=", rd_start, "hi=", rd_end);
+	payload_start = rd_start;
+	payload_size = rd_end - rd_start;
+#endif
 
-	const struct payload *p = (const struct payload *)rd_start;
+	if (payload_size < sizeof(struct payload))
+		return "payload too small";
+	const struct payload *p = (const struct payload *)payload_start;
 	int fogos = fogos_payload(p->magic);
 	if (!fogos && !magic_ok(p->magic))
 		return "no XNU payload";
-	if (p->version != 1 || (p->adt_off & 7) || (rd_start & 7))
+	if (p->version != 1 || (p->adt_off & 7) || (payload_start & 7))
 		return "bad payload header";
+	if (p->nsegs > (payload_size - sizeof(struct payload)) / sizeof(struct payload_seg) ||
+	    p->adt_off > payload_size || p->adt_size > payload_size - p->adt_off)
+		return "payload offsets invalid";
 
 	uint64_t pa_of_va_base = p->phys_base - p->virt_base;	/* pa = va + this */
 	con_hex2("PHYS", "base=", p->phys_base, "size=", p->mem_size);
@@ -107,13 +129,15 @@ const char *loader_boot(uintptr_t dtb)
 	con_hex("ENTRY", p->entry_va);
 
 	/* The payload must not overlap where the kernel goes. */
-	if (rd_end > p->phys_base && rd_start < p->phys_base + p->mem_size)
+	if (payload_start + payload_size > p->phys_base && payload_start < p->phys_base + p->mem_size)
 		return "ramdisk overlaps kernel memory";
 
 	for (uint32_t i = 0; i < p->nsegs; i++) {
 		const struct payload_seg *s = &p->segs[i];
+		if (s->file_off > payload_size || s->file_size > payload_size - s->file_off)
+			return "segment source out of range";
 		uintptr_t dst = s->vmaddr + pa_of_va_base;
-		copy64(dst, rd_start + s->file_off, s->file_size);
+		copy64(dst, payload_start + s->file_off, s->file_size);
 		if (s->vmsize > s->file_size)
 			zero64(dst + ((s->file_size + 7) & ~7UL), s->vmsize - ((s->file_size + 7) & ~7UL));
 	}
@@ -121,7 +145,7 @@ const char *loader_boot(uintptr_t dtb)
 
 	/* ADT, then boot_args, behind the kernel; everything below topOfKernelData is ours. */
 	uintptr_t adt_pa = p->kernel_end + pa_of_va_base;
-	copy64(adt_pa, rd_start + p->adt_off, p->adt_size);
+	copy64(adt_pa, payload_start + p->adt_off, p->adt_size);
 	uintptr_t ba_pa = (adt_pa + p->adt_size + PAGE_16K - 1) & ~(PAGE_16K - 1);
 	uintptr_t top = ba_pa + PAGE_16K;
 

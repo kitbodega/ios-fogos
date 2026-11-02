@@ -16,6 +16,12 @@ SECTIONS
 	. = ALIGN(4096);
 	_sec_stacks = .;
 	. += 8 * 0x1000;
+	. = ALIGN(16);
+	.fogos_payload : {
+		_fogos_payload_start = .;
+		KEEP(*(.fogos_payload))
+		_fogos_payload_end = .;
+	}
 	_end = .;
 	/DISCARD/ : { *(.comment) *(.note*) *(.eh_frame*) }
 }

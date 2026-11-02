@@ -1,7 +1,7 @@
 #!/bin/bash
-# Build the shim and wrap it in a boot.img v2 that mirrors the stock PixelOS header.
+# Build SWEET's v2 image or a FOGOS v3 image for the Moto G34.
 set -euo pipefail
-cd "$(dirname "$0")"
+SHIM_DIR=$(cd "$(dirname "$0")" && pwd)
 CC=aarch64-linux-gnu-gcc
 OBJCOPY=aarch64-linux-gnu-objcopy
 CFLAGS="-O2 -ffreestanding -nostdlib -fno-pic -mgeneral-regs-only -mstrict-align -fno-stack-protector -Wall -Wextra"
@@ -13,31 +13,52 @@ if [ "${1:-}" = "--fogos" ]; then
 else
 	PAYLOAD=${1:-}
 fi
+if [ -n "$PAYLOAD" ]; then
+	case "$PAYLOAD" in /*) ;; *) PAYLOAD="$(pwd)/$PAYLOAD" ;; esac
+fi
+cd "$SHIM_DIR"
 if [ "$PROFILE" = fogos ]; then CFLAGS="$CFLAGS -DFOGOS"; fi
 mkdir -p out
 for f in start.S shim.c console.c mmu.c fdt.c loader.c ufs.c; do
 	$CC $CFLAGS -c $f -o out/${f%.*}.o
 done
+LINK_OBJS="out/start.o out/shim.o out/console.o out/mmu.o out/fdt.o out/loader.o out/ufs.o"
+if [ "$PROFILE" = fogos ]; then
+	if [ -n "$PAYLOAD" ]; then
+		cp "$PAYLOAD" out/fogos_payload.bin
+	else
+		: > out/fogos_payload.bin
+	fi
+	(cd out && $OBJCOPY -I binary -O elf64-littleaarch64 -B aarch64 \
+		--rename-section .data=.fogos_payload,alloc,load,readonly,data,contents \
+		fogos_payload.bin fogos_payload.o)
+	LINK_OBJS="$LINK_OBJS out/fogos_payload.o"
+fi
 # The image runs wherever ABL puts it with no relocation pass: only the
 # header's image_size (start.o, linked at 0) may be an absolute address.
 abs=$(aarch64-linux-gnu-readelf -r out/shim.o out/console.o out/mmu.o out/fdt.o out/loader.o out/ufs.o | grep -c ABS64 || true)
 [ "$abs" = 0 ] || { echo "error: $abs absolute relocations in C objects" >&2; exit 1; }
 $CC $CFLAGS -static -T shim.ld -Wl,--build-id=none -Wl,--no-warn-rwx-segments -Wl,-N \
-	out/start.o out/shim.o out/console.o out/mmu.o out/fdt.o out/loader.o out/ufs.o -o out/shim.elf
+	$LINK_OBJS -o out/shim.elf
 $OBJCOPY -O binary out/shim.elf out/Image
 # ABL copies the file; pad to image_size so .bss/stacks exist as zeroed bytes.
 size=$(aarch64-linux-gnu-nm out/shim.elf | awk '$3=="_end"{print strtonum("0x"$1)}')
 truncate -s "$size" out/Image
-# Ramdisk: an xnu payload (tools/mkpayload.py) if given as $1, else an empty
-# newc cpio (ABL dislikes a zero-size ramdisk on some builds) -> diagnostics.
-if [ -n "$PAYLOAD" ]; then
+# SWEET carries the payload in ramdisk. FOGOS embeds it in Image and keeps a
+# gzip-compressed empty cpio ramdisk, matching the stock gzip vendor ramdisk.
+if [ -n "$PAYLOAD" ] && [ "$PROFILE" != fogos ]; then
 	cp "$PAYLOAD" out/ramdisk.bin
 else
 	(cd out && rm -rf rd && mkdir rd && cd rd && find . | cpio -o -H newc --quiet | gzip -9 > ../ramdisk.bin)
 fi
 if [ "$PROFILE" = fogos ]; then
-	echo "Built FOGOS shim Image only. Package with a Moto-compatible v3 boot/vendor_boot flow after handoff audit."
-	ls -l out/Image
+	# Android v3 keeps the DTB and vendor ramdisk in the existing vendor_boot
+	# partition. The payload is embedded in Image so it does not rely on the
+	# concatenated (compressed) initramfs layout.
+	mkbootimg --header_version 3 --kernel out/Image --ramdisk out/ramdisk.bin \
+		--os_version 15.0.0 --os_patch_level 2025-06 \
+		--cmdline "console=null" -o out/fogos-boot.img
+	ls -l out/Image out/fogos-boot.img
 	exit 0
 fi
 mkbootimg --header_version 2 --kernel out/Image --ramdisk out/ramdisk.bin \

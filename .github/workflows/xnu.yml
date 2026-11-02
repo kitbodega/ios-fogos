@@ -19,6 +19,9 @@ on:
         description: build only the Linux FOGOS shim artifact
         type: boolean
         default: false
+      kernel_run_id:
+        description: successful FOGOS kernel workflow run whose artifact to package
+        default: "41363602897"
   push:
     branches: [main]
     paths:
@@ -36,6 +39,10 @@ env:
   KERNEL_CONFIG: ${{ inputs.kernel_config || 'DEVELOPMENT' }}
   MACHINE_CONFIG: ${{ inputs.machine_config || 'SWEET' }}
 
+permissions:
+  actions: read
+  contents: read
+
 jobs:
   fogos-shim:
     runs-on: ubuntu-24.04
@@ -45,15 +52,47 @@ jobs:
       - name: Install AArch64 build tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu cpio
-      - name: Build no-framebuffer FOGOS shim
-        run: bash shim/build.sh --fogos
+          sudo apt-get install -y gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu cpio mkbootimg
+      - uses: actions/download-artifact@v4
+        with:
+          name: xnu-kernel
+          repository: kitbodega/ios-sweet
+          run-id: ${{ inputs.kernel_run_id || '41363602897' }}
+          github-token: ${{ github.token }}
+          path: research/fogos-ci/kernel
+      - name: Create FOGOS ADT and payload
+        run: |
+          python3 tools/mkadt.py dtb/fogos-moto-g34.adt --fogos
+          python3 tools/mkpayload.py \
+            research/fogos-ci/kernel/kernel.development.fogos \
+            dtb/fogos-moto-g34.adt shim/out/fogos-payload.bin --fogos
+      - name: Build no-framebuffer FOGOS boot image
+        run: bash shim/build.sh --fogos shim/out/fogos-payload.bin
+      - name: Verify v3 package and embedded payload
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import struct
+          image = Path('shim/out/fogos-boot.img').read_bytes()
+          kernel = Path('shim/out/Image').read_bytes()
+          assert image[:8] == b'ANDROID!'
+          kernel_size, ramdisk_size = struct.unpack_from('<II', image, 8)
+          assert struct.unpack_from('<I', image, 40)[0] == 3
+          assert struct.unpack_from('<I', image, 20)[0] == 1580
+          assert kernel_size == len(kernel)
+          assert kernel[64:].find(b'FOGOSXNU') >= 0
+          ramdisk_off = 4096 + ((kernel_size + 4095) // 4096 * 4096)
+          assert image[ramdisk_off:ramdisk_off + 2] == b'\x1f\x8b'
+          assert ramdisk_size > 0
+          print(f'boot v3 verified: kernel={kernel_size}, gzip ramdisk={ramdisk_size}')
+          PY
       - uses: actions/upload-artifact@v4
         with:
-          name: fogos-shim
+          name: fogos-boot
           path: |
             shim/out/Image
             shim/out/shim.elf
+            shim/out/fogos-boot.img
           retention-days: 14
 
   build:
