@@ -295,4 +295,7 @@ Apple `boot_args.Video` descriptor, while this macOS-targeted XNU build enables
 the progress-bar code by default and underflows its progress offset for the
 empty video size. `tools/mkpayload.py --fogos` now appends `-noprogress`, which
 the PE startup code already recognizes. An offline payload check verified the
-FOGOSXNU command line. The fix has not yet been boot-tested.
+FOGOSXNU command line. Shim-only run `41369104252` succeeded with the new
+argument and same kernel. The workaround image has not been booted: the phone
+stopped enumerating over USB after the panic. Restart it into fastboot before
+using `fastboot boot`; do not flash it.
