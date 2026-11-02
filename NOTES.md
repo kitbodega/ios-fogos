@@ -43,11 +43,22 @@ implementation is inside a SWEET-only preprocessor guard) and
 `_ml_enable_monitor` (the existing SWEET no-op stub is also SWEET-only).
 Prepared changes widen the sample function guard in patch 0054 and add patch
 `0085-fogos-ml-enable-monitor.patch` to widen the existing stub guard. The run
-log and buildtree are in ignored `research/fogos-ci/run-41362674949*`. Next:
-validate and commit these changes, dispatch one more FOGOS CI build, and check
-whether it links. These changes are committed as `b872f73` and pushed to the
-fork. Run `41363602897` is queued on `fogos-port-init` at that commit; no kernel
-image or boot result exists yet.
+log and buildtree are in ignored `research/fogos-ci/run-41362674949*`. These
+changes are committed as `b872f73` and pushed to the fork.
+
+**FOGOS kernel build milestone — run 41363602897:** success on
+`b872f73ba5a499a0015cdba39570030d286ee0c1`. The DEVELOPMENT ARM64 FOGOS kernel
+compiled and linked. Artifact `research/fogos-ci/run-41363602897/xnu-kernel/`
+contains `kernel.development.fogos` (16,970,816 bytes), verified as Mach-O
+64-bit arm64 executable, SHA-256
+`b3ba78bb006119e58d74a729c6993af2f07af8ff283c54dc774303d8e7e185b0`.
+Build log and local compile buildtree are saved under the same ignored run
+directory. This verifies a kernel image was produced; it has not been packaged
+as a Moto boot image and has not been boot-tested on hardware. `docs/FOGOS_PORT.md`
+now records this milestone and the gap to a safe boot attempt: FOGOS ADT and
+boot payload, Moto boot/vendor_boot v3 handoff, memory/reserved map, and
+board-specific early platform initialization. The existing shim/ADT are SWEET
+specific; no device boot was attempted and stock partitions remain untouched.
 
 ### Handoff update (2026-11-01, evening: first FOGOS build reaches the compiler path)
 

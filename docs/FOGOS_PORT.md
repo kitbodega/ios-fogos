@@ -33,6 +33,26 @@ touch, UFS, or boot path. Only a `DEVELOPMENT` FOGOS build is attempted. The
 first one (`41359300884`) failed in `installhdrs` because the board header did
 not exist yet; the next one builds on that fix.
 
+The first successful compile/link is CI run
+[`41363602897`](https://github.com/kitbodega/ios-sweet/actions/runs/41363602897)
+on commit `b872f73ba5a499a0015cdba39570030d286ee0c1`. It produced
+`kernel.development.fogos`, a Mach-O arm64 executable (16,970,816 bytes;
+SHA-256 `b3ba78bb006119e58d74a729c6993af2f07af8ff283c54dc774303d8e7e185b0`).
+The binary, symbols/link metadata, build log and buildtree are preserved under
+ignored `research/fogos-ci/run-41363602897/`. This proves compile and link only;
+the artifact is not an Android boot image and has not been booted.
+
+Before attempting a temporary device boot, prepare a FOGOS-specific ADT and
+boot payload, then audit the handoff against the Moto boot chain. `tools/mkadt.py`
+and the existing shim path currently model SWEET and its 16K-page boot layout;
+the Moto's boot/vendor_boot v3 handoff and real RAM/reserved map need to be
+represented accurately. `FOGOS.h` explicitly says it initializes no hardware.
+In addition, current early framebuffer mappings and final remap are guarded by
+`SWEET`, so FOGOS takes the generic XNU paths. No platform expert, PSCI CPU
+startup path, FOGOS console, or storage/display/touch drivers have been added.
+The next safe milestone is a diagnostic-only image and an audited temporary
+`fastboot boot`; do not flash partitions or use the SWEET ADT/root image.
+
 ## CI runner (2026-11-01)
 
 `macos-14`, the only hosted image with Xcode 15.x (whose `iig` matched the
