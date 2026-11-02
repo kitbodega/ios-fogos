@@ -142,6 +142,13 @@ def adt_dram(adt_blob):
 
 
 def build(kernel_path, adt_path, cmdline, ramdisk_path=None, fogos=False):
+    # FOGOS deliberately has no Apple boot Video descriptor: the display is
+    # driven by Android's splash setup and the XNU shim's early fb console.
+    # The macOS-targeted kernel enables its progress bar by default, which
+    # assumes a nonzero PE_state.video size and panics in pe_init.c otherwise.
+    if fogos and '-noprogress' not in cmdline.split():
+        cmdline = (cmdline + ' -noprogress').strip()
+
     buf = bytearray(open(kernel_path, 'rb').read())
     m = parse_macho(buf)
     nfix = apply_chained_fixups(buf, m)

@@ -288,3 +288,11 @@ bootstrap page-table teardown, and adds the `fogos-fbcon` ADT node for the
 framebuffer serial console. This should turn the next boot into a visible XNU
 stage trace. Its patch-stack application was checked locally; full XNU compile
 and another device attempt are still pending.
+
+The first boot with the new kernel reached PE initialization and panicked at
+`pe_init.c:314`: `Assertion Failed: *delta >= 0`. FOGOS correctly supplies no
+Apple `boot_args.Video` descriptor, while this macOS-targeted XNU build enables
+the progress-bar code by default and underflows its progress offset for the
+empty video size. `tools/mkpayload.py --fogos` now appends `-noprogress`, which
+the PE startup code already recognizes. An offline payload check verified the
+FOGOSXNU command line. The fix has not yet been boot-tested.
