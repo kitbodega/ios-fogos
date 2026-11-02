@@ -14,8 +14,9 @@ mounted through `/dev/block/dm-5`. The wipe did not report success. The HFS+
 image was not written. Since the formatter attempted to operate on userdata,
 its exact on-disk state is unknown and must be treated as potentially changed.
 No other partition or GPT was touched. The phone then disappeared from both
-ADB and fastboot. Resume only when it is visible in TWRP again; unmount `/data`
-and close the dm mapping before any format or raw write.
+ADB and fastboot. User then removed the screen PIN; follow-up host checks still
+show no ADB or fastboot device. Resume only when it is visible in TWRP again;
+unmount `/data` and close the dm mapping before any format or raw write.
 
 An incomplete host copy at
 `research/fogos-ci/fogos-ios-16.6.1-root-checked.img` reached about 8.4 GiB
