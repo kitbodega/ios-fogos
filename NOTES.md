@@ -1,3 +1,11 @@
+## Handoff update (2026-11-02: pthread fix build moved to Intel runner)
+
+Per user request, changed XNU build runner back to `macos-15-intel` in commit
+`2c79809`. Requested cancellation of the `macos-15` run `41427047050`, then
+dispatched replacement FOGOS DEVELOPMENT build `41427529247` on
+`macos-15-intel`. The fix is patch `0094` from commit `8f0c73d`. Wait for user
+to report build completion; do not poll. No device partitions were written.
+
 ## Handoff update (2026-11-02: pthread FOGOS guard lacked board-config include)
 
 The boot image from package run `41425943333` still panicked in
