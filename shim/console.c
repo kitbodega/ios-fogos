@@ -5,36 +5,38 @@
 #include "console.h"
 #include "font.h"
 
+#ifdef FOGOS
+/* Active FOGOS DTB: 720x1600 video-mode panel and reserved cont_splash_region.
+ * Draw only in the first 192 lines to preserve the rest of the splash buffer.
+ */
+#define CON_FB_BASE	0x85200000UL
+#define CON_FB_W	720
+#define CON_FB_H	1600
+#define CON_FB_STRIDE	(CON_FB_W * 4)
+#define CON_CLEAR_H	192
+#else
+#define CON_FB_BASE	FB_BASE
+#define CON_FB_W	FB_W
+#define CON_FB_H	FB_H
+#define CON_FB_STRIDE	FB_STRIDE
+#define CON_CLEAR_H	CON_FB_H
+#endif
+
 #define SCALE		3
 #define CH_W		(8 * SCALE)
 #define CH_H		(16 * SCALE)
 #define MARGIN		24
 #define LABEL_COLS	8
 
-#ifndef FOGOS
-volatile uint32_t *con_fb = (volatile uint32_t *)FB_BASE;
+volatile uint32_t *con_fb = (volatile uint32_t *)CON_FB_BASE;
 static uint32_t con_bg;
 static int row;
-#endif
 
-#ifdef FOGOS
-/* No FOGOS framebuffer has been identified. Keep all console operations
- * inert until a real display mapping is discovered and validated.
- */
-void con_clear(uint32_t bg) { (void)bg; }
-void con_skip(void) {}
-void con_str(const char *label, const char *s) { (void)label; (void)s; }
-void con_hex(const char *label, uint64_t v) { (void)label; (void)v; }
-void con_hex2(const char *label, const char *a, uint32_t va, const char *b, uint32_t vb)
-{
-	(void)label; (void)a; (void)va; (void)b; (void)vb;
-}
-#else
 void con_clear(uint32_t bg)
 {
-	for (int y = 0; y < FB_H; y++) {
-		volatile uint32_t *line = con_fb + y * (FB_STRIDE / 4);
-		for (int x = 0; x < FB_W; x++)
+	for (int y = 0; y < CON_CLEAR_H; y++) {
+		volatile uint32_t *line = con_fb + y * (CON_FB_STRIDE / 4);
+		for (int x = 0; x < CON_FB_W; x++)
 			line[x] = bg;
 	}
 	con_bg = bg;
@@ -47,13 +49,13 @@ static void put_char(int col, char ch, uint32_t fg)
 		ch = '?';
 	const unsigned char *g = font8x16[ch - 0x20];
 	int x0 = MARGIN + col * CH_W, y0 = MARGIN + row * CH_H;
-	if (x0 + CH_W > FB_W || y0 + CH_H > FB_H)
+	if (x0 + CH_W > CON_FB_W || y0 + CH_H > CON_FB_H)
 		return;
 	for (int gy = 0; gy < 16; gy++)
 		for (int gx = 0; gx < 8; gx++) {
 			uint32_t c = (g[gy] & (0x80 >> gx)) ? fg : con_bg;
 			for (int sy = 0; sy < SCALE; sy++) {
-				volatile uint32_t *p = con_fb + (y0 + gy * SCALE + sy) * (FB_STRIDE / 4)
+				volatile uint32_t *p = con_fb + (y0 + gy * SCALE + sy) * (CON_FB_STRIDE / 4)
 						       + x0 + gx * SCALE;
 				for (int sx = 0; sx < SCALE; sx++)
 					p[sx] = c;
@@ -110,4 +112,3 @@ void con_hex2(const char *label, const char *a, uint32_t va, const char *b, uint
 	}
 	row++;
 }
-#endif

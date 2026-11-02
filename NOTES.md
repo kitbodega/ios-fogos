@@ -79,8 +79,11 @@ v3; vendor_boot has a 4-KiB page, a 731,371-byte gzip ramdisk and DTB at
 after the vendor ramdisk with matching compression. The kernel/ADT payload is
 therefore embedded in the shim `Image`; the FOGOS boot image carries a gzip
 empty cpio ramdisk and leaves stock vendor_boot untouched. The FOGOS profile
-leaves Video zero, skips SWEET's UFS and console, and parks if its embedded
-payload is missing. Workflow `xnu.yml` now has `shim_only` and
+leaves Video zero, skips SWEET's UFS probe, and parks if its embedded payload
+is missing. A diagnostic revision now draws early status in the top 192 rows
+of the live DTB's `cont_splash_region` (`0x85200000+0x00c00000`); active panel
+is ILI9883C 720x1600 video at 120 Hz. It does not reprogram display hardware.
+Workflow `xnu.yml` now has `shim_only` and
 `kernel_run_id` inputs and builds/verifies/uploads a v3 package on Ubuntu.
 Run `41366441219` succeeded on `6eb0ca4`, downloading the known-good FOGOS
 kernel artifact, GNU-linking the shim and building/verifying a v3 image.
@@ -97,8 +100,9 @@ after about 55 seconds it reappeared as ADB `unauthorized` (fastboot absent).
 This is evidence the bootloader accepted the image and the device later ran an
 Android ADB endpoint, but without shell authorization or serial/panic logs we
 cannot confirm whether XNU entered or why control returned. No flash/erase
-command ran; stock partitions were not modified. Next: restore ADB
-authorization or establish a diagnostic serial channel before another test.
+command ran; stock partitions were not modified. The current diagnostic shim
+change has not yet been built or retried. Next: build it and inspect splash
+region output on the next temporary attempt.
 
 ### Handoff update (2026-11-01, evening: first FOGOS build reaches the compiler path)
 

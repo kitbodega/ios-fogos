@@ -71,14 +71,15 @@ the matching Apple DeviceTree artifact is not in this checkout; kernel
 bring-up does not need it, but MobileGestalt may fall back to a generic product
 identity until that data is supplied or recreated.
 
-This is an ADT for the first XNU bring-up, **not yet a boot-ready image**.
+This is an ADT for the first XNU bring-up, **not yet a boot-ready system**.
 Start with `cpus=1` because XNU still lacks the FOGOS PSCI CPU-on path. The
 ADT describes the observed `smc` PSCI conduit, but that does not implement it.
-The current shim still writes SWEET framebuffer values into `boot_args.Video`,
-and the FOGOS kernel has no board console, platform expert, storage, display,
-or touch drivers. Do not pass this ADT through the unmodified SWEET shim or
-boot it yet. Next: make the shim accept a no-framebuffer FOGOS profile and
-audit the Android boot/vendor_boot v3 handoff before a temporary `fastboot boot`.
+The FOGOS shim sets `boot_args.Video` to zero and makes no claims that XNU has
+a working display, platform expert, storage, or touch driver. The live DTB now
+provides a diagnostic target for the shim: the active ILI9883C 720x1600 video
+panel, 120 Hz, and the reserved splash range `0x85200000+0x00c00000`. A
+diagnostic build paints only the top 192 rows of this range; it does not
+initialize or reprogram the display engine.
 
 ## CI runner (2026-11-01)
 

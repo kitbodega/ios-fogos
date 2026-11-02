@@ -373,12 +373,14 @@ static uint32_t __attribute__((unused)) to_us(uint64_t ticks)
 void shim_main(uint64_t dtb)
 {
 #ifdef FOGOS
-	/* FOGOS profile: no SWEET framebuffer, UFS probe, or SWEET diagnostics.
-	 * A failed payload lookup parks safely instead of touching board hardware.
+	/* FOGOS diagnostic profile uses only the reserved splash buffer. No UFS,
+	 * storage, GIC, or display-engine registers are touched.
 	 */
 	stage = "fogos loader";
+	con_clear(BLUE);
+	con_str("FOGOS", "shim entered");
 	const char *why = loader_boot(dtb);
-	(void)why;
+	con_str("LOADER", why);
 	for (;;)
 		__asm__ volatile("wfe");
 #else
