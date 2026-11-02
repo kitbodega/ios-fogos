@@ -1,3 +1,16 @@
+## Handoff update (2026-11-02: IOMedia assertion found after UFS root selection)
+
+The user's follow-up photo after temporary image `41505704235` shows
+`BSD root: ufsroot0, major 1, minor 0`, followed by
+`IOService.cpp:5130 Assertion failed: iomediaClass`. Patch `0095` passed the
+previous `IOBlockStorageDriver` assertion. XNU then calls
+`IOService::publishHiddenMedia()`, whose assertion and no-IOMedia fallback are
+currently SWEET-only. FOGOS has no `IOStorageFamily`, so widen both guards to
+FOGOS. Added `0096-fogos-no-iomedia-root-assert.patch`; `git apply --check`
+passes against the extracted XNU source from run `41427529247`. Commit/push is
+next and will trigger another kernel build. The UFS driver remains read-only;
+no device data was changed.
+
 ## Handoff update (2026-11-02: root-assert fix image booted temporarily)
 
 Kernel run `41502908861` completed successfully on `macos-15-intel`; its log

@@ -1,0 +1,18 @@
+diff --git a/iokit/Kernel/IOService.cpp b/iokit/Kernel/IOService.cpp
+--- a/iokit/Kernel/IOService.cpp
++++ b/iokit/Kernel/IOService.cpp
+@@ -5128,4 +5128,4 @@
+ 	iomediaClass = OSMetaClass::getMetaClassWithName(gIOMediaKey);
+-#if !defined(ARM64_BOARD_CONFIG_SWEET)
++#if !defined(ARM64_BOARD_CONFIG_SWEET) && !defined(ARM64_BOARD_CONFIG_FOGOS)
+ 	assert(iomediaClass);
+ #endif
+@@ -5140,6 +5140,6 @@
+-#if defined(ARM64_BOARD_CONFIG_SWEET)
+-	/* SWEET has no IOStorageFamily: without the IOMedia class no media exists to unhide. */
++#if defined(ARM64_BOARD_CONFIG_SWEET) || defined(ARM64_BOARD_CONFIG_FOGOS)
++	/* SWEET and FOGOS have no IOStorageFamily: without IOMedia there is no media to unhide. */
+ 	if (!iomediaClass) {
+ 		wasHiding = false;
+ 	}
+ #endif
