@@ -2,9 +2,13 @@
 
 Run `41501494585` for commit `23d7050` was queued on `macos-15-intel`. Per the
 user's request, changed `.github/workflows/xnu.yml` to `runs-on: macos-15` in
-commit `4271962`. Replacement run `41502001671` is queued on `macos-15`; the
-previous run is cancelled by the workflow concurrency group. Await the new
-run's result. No device partitions were written.
+commit `4271962`; replacement run `41502001671` is on `macos-15`, and the old
+run was cancelled by the workflow concurrency group. A single status query
+shows `fogos-shim` completed, but on a push it downloaded the workflow's
+fallback kernel run `41405380749`; do not use that shim artifact. The actual
+macOS `build` job is still queued with no steps, so the UI's “about to start”
+line did not mean compilation had begun. Await runner capacity; do not poll
+repeatedly. No device partitions were written.
 
 ## Handoff update (2026-11-02: root-selection panic identified)
 
