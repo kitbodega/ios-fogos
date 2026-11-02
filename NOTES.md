@@ -1,3 +1,7 @@
+## Handoff update (2026-11-02: latest photo still ends at platform expert)
+
+The user's latest photo again ends at `FOGOS: platform expert registered`; none of patch 0089's `PE_lockdown_iokit`/`bsd_init`/`setconf`/`vfs_mountroot` markers are visible. The `Image` artifact downloaded from package run `41410953077` contains all four new marker strings, confirming they were included in the packaged kernel file, but not proving that this exact image was the one photographed or that execution reached those statements. Treat the runtime result as inconclusive. Next, confirm the phone was showing the boot from `research/fogos-ci/run-41410953077/fogos-boot/fogos-boot.img`; if yes and the screen remains unchanged, instrument with output routed via `IOLog`/console at the earlier point because the new `printf` markers did not appear. No partitions written.
+
 ## Handoff update (2026-11-02: BSD root diagnostic image temporarily booted)
 
 Downloaded `fogos-boot.img` from packaging run `41410953077` and issued `fastboot boot` from the local Platform Tools executable. Fastboot reported `Sending boot.img OKAY` and `Booting OKAY` (10.9 s). This confirms the image was transferred and launched; it does not establish that XNU completed boot. Await the user's screen photo/logs for the new `PE_lockdown_iokit`, `bsd_init`, `setconf`, and `vfs_mountroot` markers. No partitions were flashed or written.
