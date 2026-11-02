@@ -1,6 +1,6 @@
 ## Handoff update (2026-11-02: panic text scroll behavior)
 
-User clarifies the panic text scrolls/cuts off and becomes unreadable. The framebuffer serial console in patch 0003 wrapped its row cursor modulo screen rows and cleared old rows; changed it to scroll pixels upward by one glyph row at the bottom, preserving the most recent panic output on screen. With native 8x16 glyphs the 720x1600 panel holds 100 rows x 90 columns. Updated the later `serial_init` hunk offset and patch header line counts. Not yet built or device-tested. Next: commit/push, dispatch FOGOS DEVELOPMENT build; package only the exact successful kernel. Do not flash.
+User clarifies the panic text scrolls/cuts off and becomes unreadable. The framebuffer serial console in patch 0003 wrapped its row cursor modulo screen rows and cleared old rows; changed it to scroll pixels upward by one glyph row at the bottom, preserving the most recent panic output on screen. With native 8x16 glyphs the 720x1600 panel holds 100 rows x 90 columns. Committed/pushed `bec8a56`; FOGOS DEVELOPMENT build dispatched as run `41385827184`. User prefers no polling. Package only the exact successful kernel. Do not flash.
 
 ## Handoff update (2026-11-02: IMG_0300 new power-management panic)
 
