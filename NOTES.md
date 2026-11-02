@@ -1,3 +1,13 @@
+## Handoff update (2026-11-02: corrected pthread image booted temporarily)
+
+User reported packaging run `41488725234` complete. Downloaded its `fogos-boot`
+artifact to `research/fogos-ci/run-41488725234/fogos-boot/fogos-boot.img`.
+Temporary `fastboot boot` succeeded: 16,144 KiB sent, `Sending OKAY`,
+`Booting OKAY` (5.0 s). This image includes the verified pthread provider
+marker from kernel run `41432190971`. No device partitions were written. Await
+user screen photo/report to verify the registration marker appears and whether
+XNU passes `pthread_init()`.
+
 ## Handoff update (2026-11-02: corrected pthread kernel verified; package queued)
 
 User reports kernel build `41432190971` completed. Its build log confirms
