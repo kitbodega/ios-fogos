@@ -346,3 +346,8 @@ The final `IMG_0294.MOV` frame confirms a NULL indirect PRNG callback: PC 0, LR 
 ## Panic console scrolling
 
 FOGOS panic output previously wrapped from the bottom of the framebuffer to the top and cleared old rows, making long dumps appear cut off/overwritten. The framebuffer serial console now scrolls upward by one native 8x16 text row at the bottom. On the 720x1600 panel this keeps the most recent ~100 rows visible. Build and temporary boot are pending.
+
+
+## Trust-cache service unavailable (2026-11-02)
+
+The latest phone panic is image4 interface not available in kern_trustcache.c:268; boot has passed the earlier PRNG callback panic. This board has no AppleImage4/AMFI provider. Patch 0015 already implements a safe unavailable trust-cache runtime for SWEET, but its guards were SWEET-only. The FOGOS change imports board_config.h and applies the same NULL-runtime behavior to ARM64_BOARD_CONFIG_FOGOS: trust-cache queries return no matches and cache loads report unsupported. No trust is granted. Build and retest are pending.
