@@ -1,4 +1,4 @@
-## Handoff update (2026-11-02: root-assert fix packaged; phone not enumerated)
+## Handoff update (2026-11-02: root-assert fix image booted temporarily)
 
 Kernel run `41502908861` completed successfully on `macos-15-intel`; its log
 confirms `0095-fogos-no-iostoragefamily-root-assert.patch` applied. The
@@ -8,9 +8,12 @@ completed and its artifact is at
 `research/fogos-ci/run-41505704235/fogos-boot/fogos-boot.img` (16,531,456
 bytes), using kernel `41502908861` and
 `debug=0xc serial=3 cpus=1 keepsyms=1 rd=ufsroot0`. Both
-`fastboot devices -l` and `adb devices -l` returned no attached device, so the
-image was not sent. No device partitions were written. Resume once the phone
-is back in fastboot and enumerates over USB; then use `fastboot boot` only.
+An initial attempt found no device in ADB or fastboot. On the user's later
+`boot` request, fastboot enumerated `ZY32JNZ8K2`; temporary `fastboot boot`
+sent the image: `Sending 'boot.img' (16144 KB) OKAY`, `Booting OKAY` (10.926 s
+total). This is a temporary boot only; no device partitions were written.
+Await screen photo/result for the IOService root-media assertion fix and
+whether XNU reaches mountroot.
 
 ## Handoff update (2026-11-02: build runner switched back to macos-15-intel)
 
