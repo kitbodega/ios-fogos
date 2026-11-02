@@ -1,3 +1,7 @@
+## Handoff update (2026-11-02: post-IOKit diagnostic kernel reported successful)
+
+The user reports FOGOS DEVELOPMENT kernel run `41409691271` compiled successfully. Dispatched shim-only packaging run `41410953077` using that kernel with `debug=0xc serial=3 cpus=1 keepsyms=1 fogos-ufs-probe=1`. Do not poll Actions; wait for the user to report that packaging finished, then download `fogos-boot` and run it only with temporary `fastboot boot`. No partition writes.
+
 ## Handoff update (2026-11-02: post-IOKit and BSD root markers queued)
 
 Added `xnu/patches/0089-fogos-bsd-init-progress-markers.patch` and committed/pushed it as `f0b5d3e`. It logs before/after `PE_lockdown_iokit`, at entry to `bsd_init`, around `setconf()` (where BSD selects the root and the FOGOS UFS probe runs), and around `vfs_mountroot()`. The patch applies cleanly to the successful run `41407449487` buildtree. Dispatched FOGOS DEVELOPMENT kernel run `41409691271`; do not poll Actions, per user request to conserve limits. Once the user reports completion, package that kernel with `fogos-ufs-probe=1` and use temporary `fastboot boot`; no partition writes.
