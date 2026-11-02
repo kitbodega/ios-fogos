@@ -231,14 +231,22 @@ sequencing and protocol study and must be reimplemented for XNU.
 3. The FOGOS board target and ADT v1 now exist. Keep the SWEET defaults intact.
    Recheck the ADT's high-bank physical destination against the Android
    initrd address in the bootloader handoff before using it.
-4. The no-framebuffer shim and Android v3 package path exist. Link and verify
-   the image in CI, then test only with temporary `fastboot boot`; do not flash
-   boot, recovery, modem, persist, or alter GPT.
+4. The no-framebuffer shim and Android v3 image are built and verified. One
+   temporary `fastboot boot` was accepted, but XNU entry is unconfirmed; obtain
+   an authorized diagnostic channel before another attempt. Never flash boot,
+   recovery, modem, persist, or alter GPT for this milestone.
 5. Bring up storage read-only first, then display/input and only later an iOS
    root image. Any userdata erase requires a separate explicit confirmation.
 
 The FOGOS kernel has compiled and linked, and ADT v1 has been generated and
-parsed locally. The shim FOGOS profile makes console writes inert, skips
+parsed locally. CI run `41366441219` succeeded on commit `6eb0ca4`: it pulled
+the known-good kernel artifact, linked the shim with GNU AArch64 tools,
+created the 16,547,840-byte v3 boot image and verified the image header, Linux
+Image magic, embedded payload and gzip ramdisk. The artifact is preserved at
+ignored `research/fogos-ci/run-41366441219/fogos-boot.img`; SHA-256 is
+`7a569fa987b5cc1b6f07d4ef44168005e26e1725f6f8abf77877f6e41be3152b`.
+
+The shim FOGOS profile makes console writes inert, skips
 SWEET's UFS probe and diagnostics, parks on a missing payload, and leaves
 `boot_args.Video` zero. `tools/mkpayload.py --fogos` marks the payload
 `FOGOSXNU`. Android's boot v3 separates the DTB/vendor ramdisk into
@@ -255,7 +263,10 @@ compile with WSL Clang for AArch64 and `-Werror`. The available WSL lacks GNU
 cross-link tools, so CI is being used to link and validate the final package.
 `tools/mkbootv3.py` writes the minimal v3 header and aligned kernel/ramdisk
 sections without relying on the Ubuntu `mkbootimg` package, whose Python entry
-point failed to import its `gki` module in CI. A successful image build still
-does not prove ABL accepts
-`fastboot boot`; no partition has been written and no XNU boot has been
-attempted.
+point failed to import its `gki` module in CI. One temporary device attempt
+used `fastboot boot` and ABL returned `Booting OKAY`. USB was absent for about
+20 seconds, then ADB reappeared as `unauthorized` after about 55 seconds;
+without an authorized shell, serial console or panic log, XNU reaching its
+entry point or returning to Android cannot be confirmed. No partition was
+written. The next useful step is obtaining an authorized diagnostic channel
+before another blind attempt.

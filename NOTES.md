@@ -82,12 +82,23 @@ empty cpio ramdisk and leaves stock vendor_boot untouched. The FOGOS profile
 leaves Video zero, skips SWEET's UFS and console, and parks if its embedded
 payload is missing. Workflow `xnu.yml` now has `shim_only` and
 `kernel_run_id` inputs and builds/verifies/uploads a v3 package on Ubuntu.
-The local WSL Clang compile for six AArch64 C files passed with `-Werror`. CI
-is validating GNU linking and the custom `tools/mkbootv3.py` packer; the Ubuntu
-`mkbootimg` entry point failed with `ModuleNotFoundError: gki` in run
-41366311883, so the package dependency was removed. `fastboot boot` behavior
-with stock vendor_boot still needs device validation; no partition write or
-XNU boot has occurred.
+Run `41366441219` succeeded on `6eb0ca4`, downloading the known-good FOGOS
+kernel artifact, GNU-linking the shim and building/verifying a v3 image.
+Artifact: ignored `research/fogos-ci/run-41366441219/fogos-boot.img`, 16,547,840
+bytes, SHA-256 `7a569fa987b5cc1b6f07d4ef44168005e26e1725f6f8abf77877f6e41be3152b`.
+The first Ubuntu `mkbootimg` attempt failed with `ModuleNotFoundError: gki`
+(run `41366311883`); removed that package and use custom `tools/mkbootv3.py`.
+
+**Temporary device attempt:** Android reported `vbmeta.device_state=unlocked`,
+slot `_a`, battery 77%. After `adb reboot bootloader`, fastboot identified
+product `fogos`; `fastboot boot` returned `Sending OKAY` and `Booting OKAY` for
+the generated image. The phone disappeared from USB for about 20 seconds;
+after about 55 seconds it reappeared as ADB `unauthorized` (fastboot absent).
+This is evidence the bootloader accepted the image and the device later ran an
+Android ADB endpoint, but without shell authorization or serial/panic logs we
+cannot confirm whether XNU entered or why control returned. No flash/erase
+command ran; stock partitions were not modified. Next: restore ADB
+authorization or establish a diagnostic serial channel before another test.
 
 ### Handoff update (2026-11-01, evening: first FOGOS build reaches the compiler path)
 
