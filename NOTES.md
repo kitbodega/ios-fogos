@@ -1324,3 +1324,7 @@ Shim-only package run `41536192141` succeeded using exact kernel run `4153207579
 ## Handoff update (2026-11-02: AMFI table visible to FOGOS)
 
 Build run `41542902912` applied patches `0035`, `0036`, `0050`, and `0097`, then failed compiling `bsd/kern/sweet_amfi.c`: `sweet_amfi_mac_ops` had accidentally been enclosed in the SWEET-only guard. Updated patch `0050` to close the SWEET guard before the shared AMFI ops table and reopen it only around the permissive SWEET Sandbox policy. `git apply --check` passes against the build 41532075795 source tree; `git diff --check` is clean. Commit and push this fix, then wait for the user to report whether the next build completes; do not poll or write device partitions.
+
+## Handoff update (2026-11-02: FOGOS AMFI build booted)
+
+Kernel run `41545243026` succeeded on commit `5eccbe99f09a161cca38d621bb631002169b95b9`; AMFI patch `0050` now compiles for FOGOS. Shim-only package run `41546848533` succeeded using that exact kernel with `debug=0xc serial=3 cpus=1 keepsyms=1 rd=ufsroot0` (no `unentitled_ios_sim_launch=1`). Verified the embedded Image contains the boot args. Temporary `fastboot boot` of `research/fogos-ci/run-41546848533/fogos-boot.img` was accepted by device `ZY32JNZ8K2` (Sending OKAY, Booting OKAY). No partitions were written. Await the next screen/photo to see whether userspace passes platform-binary validation and how far the root boot proceeds.
