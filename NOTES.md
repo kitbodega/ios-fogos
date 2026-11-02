@@ -8,7 +8,7 @@ The user supplied a photo from the FOGOS shim boot. Visible diagnostics read `FO
 
 Prepared the next diagnostic milestone: patch `0086-fogos-early-framebuffer-console.patch` adapts the existing SWEET early-stage markers and fbcon to the live FOGOS splash buffer at `0x85200000` (720x1600, stride 2880, 12 MiB). It marks the first XNU entry and adds an NC mapping for the 32 MiB block at `0x84000000`, then relocates early output across bootstrap page-table teardown. It also exposes an ADT `fogos-fbcon` node and makes `pe_serial.c` probe that node for FOGOS. The screenshot validates that the shim's splash address is visible; it does not validate XNU's later page-table/console path.
 
-Locally regenerated `dtb/fogos-moto-g34.adt` is 8,244 bytes. `tools/mkadt.py` and patch 0086 pass Python syntax / patch application checks: patches 0082-0086 apply in sequence to the XNU checkout through patch 0030. Full compile and hardware test remain outstanding. Next: commit/push these changes, dispatch `xnu.yml` for FOGOS DEVELOPMENT, inspect CI and compile diagnostics; if successful, package a new temporary boot image and inspect the screen/ADB. Keep fastboot boot only; do not flash.
+Locally regenerated `dtb/fogos-moto-g34.adt` is 8,244 bytes. `tools/mkadt.py` and patch 0086 pass Python syntax / patch application checks: patches 0082-0086 apply in sequence to the XNU checkout through patch 0030. Commit `9982515` was pushed to `fork/fogos-port-init`; FOGOS DEVELOPMENT workflow run `41367858735` is queued on that commit. Next: inspect CI compile diagnostics; if successful, package a new temporary boot image and inspect the screen/ADB. Keep fastboot boot only; do not flash.
 
 
 ### Handoff update (2026-11-02: first complete FOGOS build analyzed)
