@@ -283,10 +283,10 @@
  #endif /* ARM64_BOARD_CONFIG_SWEET || ARM64_BOARD_CONFIG_FOGOS */
 --- a/iokit/conf/files.arm64
 +++ b/iokit/conf/files.arm64
-@@ -10,3 +10,4 @@
+@@ -9,3 +9,4 @@
+ # SWEET/FOGOS device-tree platform (empty translation unit on other boards)
  iokit/Kernel/arm/SweetPlatformExpert.cpp                         optional iokitcpp
- 
- iokit/Kernel/arm/SweetCPU.cpp                                    optional iokitcpp
+ iokit/Kernel/arm/FogosCPU.cpp                                    optional iokitcpp
 +iokit/Kernel/arm/SweetEntitlements.cpp                           optional iokitcpp
 --- /dev/null
 +++ b/iokit/Kernel/arm/SweetEntitlements.cpp
