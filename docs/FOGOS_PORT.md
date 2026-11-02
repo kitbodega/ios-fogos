@@ -343,3 +343,6 @@ The user-provided photos show `PC=0`, `ESR=0x86000005`, `FAR=0`, `LR=0xfffffe000
 ## Early `read_random` provider fallback (2026-11-02)
 
 The final `IMG_0294.MOV` frame confirms a NULL indirect PRNG callback: PC 0, LR at the return point in `read_random`, ESR `0x86000005`, FAR 0. XNU already has `read_erandom()`, which uses the bootloader-seeded built-in HMAC-SHA256 DRBG while `prng_ready` is false. The bug is that `read_random()` invokes `prng_funcs.refresh` unconditionally. Patch 0014 now routes FOGOS calls through `read_erandom()` until registration sets `prng_ready`, then uses the normal PRNG callbacks. A fresh build and temporary boot are pending.
+## Panic console scrolling
+
+FOGOS panic output previously wrapped from the bottom of the framebuffer to the top and cleared old rows, making long dumps appear cut off/overwritten. The framebuffer serial console now scrolls upward by one native 8x16 text row at the bottom. On the 720x1600 panel this keeps the most recent ~100 rows visible. Build and temporary boot are pending.

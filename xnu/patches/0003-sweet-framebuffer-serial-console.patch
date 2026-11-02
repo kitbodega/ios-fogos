@@ -2,7 +2,7 @@ diff --git a/pexpert/arm/pe_serial.c b/pexpert/arm/pe_serial.c
 index 997a4ab..db26bbe 100644
 --- a/pexpert/arm/pe_serial.c
 +++ b/pexpert/arm/pe_serial.c
-@@ -697,6 +697,148 @@ register_serial_functions(struct pe_serial_functions *fns)
+@@ -697,6 +697,163 @@ register_serial_functions(struct pe_serial_functions *fns)
  	gPESF = fns;
  }
  
@@ -15,8 +15,8 @@ index 997a4ab..db26bbe 100644
 + *   reg    = <phys size>       absolute physical address, not arm-io relative
 + *   width, height              pixels
 + *   stride                     bytes per line, 32bpp
-+ * Lines wrap back to the top instead of scrolling; the line after the cursor
-+ * is kept blank so the newest output is easy to find.
++ * The console scrolls upward at the bottom; the line after the cursor is kept
++ * blank so the newest output is easy to find.
 + */
 +
 +extern unsigned char iso_font[256 * 16];
@@ -44,9 +44,24 @@ index 997a4ab..db26bbe 100644
 +fbcon_newline(void)
 +{
 +	fbcon_col = 0;
-+	fbcon_row = (fbcon_row + 1) % fbcon_rows;
++	if (fbcon_row + 1 < fbcon_rows) {
++		fbcon_row++;
++	} else {
++		uint32_t cell_h = 16 * FBCON_SCALE;
++		uint32_t stride = fbcon_stride / 4;
++		for (uint32_t y = 0; y < fbcon_height - cell_h; y++) {
++			volatile uint32_t *dst = fbcon_base + y * stride;
++			volatile uint32_t *src = fbcon_base + (y + cell_h) * stride;
++			for (uint32_t x = 0; x < fbcon_width; x++) {
++				dst[x] = src[x];
++			}
++		}
++		fbcon_row = fbcon_rows - 1;
++	}
 +	fbcon_clear_row(fbcon_row);
-+	fbcon_clear_row((fbcon_row + 1) % fbcon_rows);
++	if (fbcon_row + 1 < fbcon_rows) {
++		fbcon_clear_row(fbcon_row + 1);
++	}
 +}
 +
 +static void
@@ -151,7 +166,7 @@ index 997a4ab..db26bbe 100644
  #if HIBERNATION
  /**
   * Transitions the serial driver into a mode that can be run in the hibernation
-@@ -777,6 +919,8 @@ serial_init(void)
+@@ -777,6 +934,8 @@ serial_init(void)
  
  	PE_parse_boot_argn("disable-uart-irq", &disable_uart_irq, sizeof(disable_uart_irq));
  
