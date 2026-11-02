@@ -1,7 +1,7 @@
 diff --git a/iokit/KernelConfigTables.cpp b/iokit/KernelConfigTables.cpp
 --- a/iokit/KernelConfigTables.cpp
 +++ b/iokit/KernelConfigTables.cpp
-@@ -34,6 +34,14 @@
+@@ -34,6 +34,22 @@
  
  const char * gIOKernelConfigTables =
      "("
@@ -10,6 +10,14 @@ diff --git a/iokit/KernelConfigTables.cpp b/iokit/KernelConfigTables.cpp
 +    "     'IOClass'         = SweetPlatformExpert;"
 +    "     'IOProviderClass' = IOPlatformExpertDevice;"
 +    "     'IONameMatch'     = 'xiaomi,sweet';"
++    "     'IOProbeScore'    = 10000:32;"
++    "   },"
++#endif
++#if defined(ARM64_BOARD_CONFIG_FOGOS)
++    "   {"
++    "     'IOClass'         = SweetPlatformExpert;"
++    "     'IOProviderClass' = IOPlatformExpertDevice;"
++    "     'IONameMatch'     = 'D22AP';"
 +    "     'IOProbeScore'    = 10000:32;"
 +    "   },"
 +#endif
@@ -38,7 +46,7 @@ new file mode 100644
 + */
 +#include <pexpert/arm64/board_config.h>
 +
-+#if defined(SWEET)
++#if defined(ARM64_BOARD_CONFIG_SWEET) || defined(ARM64_BOARD_CONFIG_FOGOS)
 +#include <IOKit/IOPlatformExpert.h>
 +#include <IOKit/IODeviceTreeSupport.h>
 +#include <IOKit/IOLib.h>
@@ -116,4 +124,4 @@ new file mode 100644
 +	strlcpy(name, "Redmi Note 10 Pro", (size_t)maxLength);
 +	return true;
 +}
-+#endif /* SWEET */
++#endif /* ARM64_BOARD_CONFIG_SWEET || ARM64_BOARD_CONFIG_FOGOS */

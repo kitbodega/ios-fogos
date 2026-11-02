@@ -5,8 +5,8 @@
  		 * backwards compatibility purposes only.
  		 */
 -#if XNU_TARGET_OS_OSX && defined(__arm64__)
-+#if XNU_TARGET_OS_OSX && defined(__arm64__) && !defined(ARM64_BOARD_CONFIG_SWEET)
-+	/* SWEET: the macOS config runs the iOS userland, which wants the
++#if XNU_TARGET_OS_OSX && defined(__arm64__) && !defined(ARM64_BOARD_CONFIG_SWEET) && !defined(ARM64_BOARD_CONFIG_FOGOS)
++	/* SWEET/FOGOS: the macOS config runs the iOS userland, which wants the
 +	 * device-tree names (hw.machine iPhone10,3, hw.model D22AP). */
  	/* The following two are kludged for backward
  	 * compatibility. Use hw.product/hw.target for something
@@ -50,4 +50,4 @@
 + * "compatible" string and "model" (D22AP / iPhone10,3 in the ADT), which
 + * is what the iPhone userland (MobileGestalt) expects.
 + */
- #endif /* SWEET */
+ #endif /* ARM64_BOARD_CONFIG_SWEET || ARM64_BOARD_CONFIG_FOGOS */
