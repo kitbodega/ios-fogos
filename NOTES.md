@@ -10,6 +10,10 @@ On the user's `boot` request, retried `adb reboot bootloader` with Platform Tool
 
 Downloaded `fogos-boot.img` from packaging run `41415658320` to `research/fogos-ci/run-41415658320/fogos-boot/fogos-boot.img`. Attempted `adb reboot bootloader` with local Platform Tools; it returned `no devices/emulators found`. Direct `fastboot boot` waited for a device and was canceled before sending anything. Retried with Motorola RSA's bundled ADB; it reported adb server/client version mismatch (41 vs 40), restarted the server, and still found no devices. No boot image was sent and no partition was written. Need the USB device to enumerate to ADB (authorize USB debugging / reconnect cable or port); once `adb devices` shows `device`, reboot to bootloader and run the downloaded image with `fastboot boot`.
 
+## Handoff update (2026-11-02: single-CPU kernel reported built; package queued)
+
+The user reports kernel run `41419799956` completed successfully. Dispatched shim-only packaging run `41422526901` using that exact kernel artifact with `debug=0xc serial=3 cpus=1 keepsyms=1 fogos-ufs-probe=1`. Do not poll. After user reports package completion, download and temporary-boot its `fogos-boot.img`; no partitions written.
+
 ## Handoff update (2026-11-02: XNU build moved to Intel macOS runner)
 
 Per user request, changed `.github/workflows/xnu.yml` from `runs-on: macos-15` to the valid Intel label `macos-15-intel`, commit `cf9b61b`. Submitted cancellation for queued run `41418097593` and dispatched replacement FOGOS DEVELOPMENT build `41419799956` on the updated branch. Do not poll. If the user reports it compiled, package that exact kernel artifact; ignore the canceled run's shim artifact, which used the old default kernel. No device writes.
