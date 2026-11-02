@@ -1,6 +1,6 @@
 ## Handoff update (2026-11-02: CI concurrency fix)
 
-User screenshot confirmed why kernel run `41378944943` was cancelled: GitHub annotation says `Canceling since a higher priority waiting request for xnu-refs/heads/fogos-port-init exists`. Kernel build and shim-only package shared one concurrency group with `cancel-in-progress: true`, so starting shim packaging cancelled the kernel job. Workflow concurrency group now includes `shim` vs `kernel`, committed/pushed as `18328af`. Fresh FOGOS DEVELOPMENT kernel build run `41380094695` reported complete by user. Shim-only package run `41381586762` dispatched using that kernel ID. User prefers no polling; wait for user report before download.
+User screenshot confirmed why kernel run `41378944943` was cancelled: GitHub annotation says `Canceling since a higher priority waiting request for xnu-refs/heads/fogos-port-init exists`. Kernel build and shim-only package shared one concurrency group with `cancel-in-progress: true`, so starting shim packaging cancelled the kernel job. Workflow concurrency group now includes `shim` vs `kernel`, committed/pushed as `18328af`. Fresh FOGOS DEVELOPMENT kernel build run `41380094695` reported complete by user. Shim-only package run `41381586762` downloaded successfully. Boot image: `research/fogos-ci/run-41381586762/fogos-boot/fogos-boot.img` (16,551,936 bytes), packaged from kernel run `41380094695`. No partition written; user should test with temporary fastboot boot.
 
 ## Handoff update (2026-11-02: include selected board config in PRNG units)
 
