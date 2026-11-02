@@ -1,4 +1,4 @@
-## Handoff update (2026-11-02: IOMedia assertion found after UFS root selection)
+## Handoff update (2026-11-02: IOMedia guard built; package queued)
 
 The user's follow-up photo after temporary image `41505704235` shows
 `BSD root: ufsroot0, major 1, minor 0`, followed by
@@ -7,9 +7,11 @@ previous `IOBlockStorageDriver` assertion. XNU then calls
 `IOService::publishHiddenMedia()`, whose assertion and no-IOMedia fallback are
 currently SWEET-only. FOGOS has no `IOStorageFamily`, so widen both guards to
 FOGOS. Added `0096-fogos-no-iomedia-root-assert.patch`; `git apply --check`
-passes against the extracted XNU source from run `41427529247`. Commit
-`8c07f62` is pushed to `main`; the patch-path push triggers a new kernel build.
-Per the user's preference, do not poll Actions; await their completion report.
+passes against the extracted XNU source from run `41427529247`. Kernel run
+`41507254663` completed successfully, and its log confirms `0096` was applied.
+Dispatched shim-only package run `41510236241` using that exact kernel with
+`debug=0xc serial=3 cpus=1 keepsyms=1 rd=ufsroot0`. Await package completion
+before downloading/booting; per the user's preference, do not poll Actions.
 The UFS driver remains read-only; no device data was changed.
 
 ## Handoff update (2026-11-02: root-assert fix image booted temporarily)
