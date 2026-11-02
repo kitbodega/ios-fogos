@@ -19,6 +19,19 @@ User reports build complete. Dispatched shim-only package run `41431133551`
 using kernel run `41427529247` with `debug=0xc serial=3 cpus=1 keepsyms=1
 fogos-ufs-probe=1`. Wait for the user's package completion report; do not poll.
 
+## Handoff update (2026-11-02: pthread patches were skipped as corrupt)
+
+The user's latest photo still shows the pthread function-table panic. Inspected
+the exact package image: it has the panic string but no pthread provider marker.
+Then inspected GitHub Actions logs for kernel run `41427529247`: both patch
+`0093-fogos-builtin-pthread-provider.patch` and
+`0094-fogos-include-board-config-for-pthread.patch` were skipped as `corrupt
+patch` (hunk line counts were wrong). Thus the FOGOS kernel had neither change;
+the previous diagnosis that only the board-config include was missing was
+incomplete. Corrected hunk counts in both patches. Need a new kernel build and
+must check it applies/contains the provider marker before packaging. No
+partitions written.
+
 ## Handoff update (2026-11-02: pthread FOGOS guard lacked board-config include)
 
 The boot image from package run `41425943333` still panicked in

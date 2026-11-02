@@ -15,7 +15,7 @@ diff --git a/bsd/sys/pthread_internal.h b/bsd/sys/pthread_internal.h
 diff --git a/bsd/pthread/sweet_pthread_init.c b/bsd/pthread/sweet_pthread_init.c
 --- a/bsd/pthread/sweet_pthread_init.c
 +++ b/bsd/pthread/sweet_pthread_init.c
-@@ -1,5 +1,8 @@
+@@ -1,4 +1,7 @@
  /* Built-in provider: Apple libpthread-514.100.2, paired with xnu-8796.141.3. */
 +#if defined(__arm64__)
 +#include <pexpert/arm64/board_config.h>
@@ -26,7 +26,7 @@ diff --git a/bsd/pthread/sweet_pthread_init.c b/bsd/pthread/sweet_pthread_init.c
 diff --git a/bsd/pthread/sweet_pthread_support.c b/bsd/pthread/sweet_pthread_support.c
 --- a/bsd/pthread/sweet_pthread_support.c
 +++ b/bsd/pthread/sweet_pthread_support.c
-@@ -1,5 +1,8 @@
+@@ -1,4 +1,7 @@
  /* Built-in provider: Apple libpthread-514.100.2, paired with xnu-8796.141.3. */
 +#if defined(__arm64__)
 +#include <pexpert/arm64/board_config.h>
@@ -37,7 +37,7 @@ diff --git a/bsd/pthread/sweet_pthread_support.c b/bsd/pthread/sweet_pthread_sup
 diff --git a/bsd/pthread/sweet_pthread_synch.c b/bsd/pthread/sweet_pthread_synch.c
 --- a/bsd/pthread/sweet_pthread_synch.c
 +++ b/bsd/pthread/sweet_pthread_synch.c
-@@ -1,5 +1,8 @@
+@@ -1,4 +1,7 @@
  /* Built-in provider: Apple libpthread-514.100.2, paired with xnu-8796.141.3. */
 +#if defined(__arm64__)
 +#include <pexpert/arm64/board_config.h>
