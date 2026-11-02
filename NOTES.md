@@ -1,14 +1,8 @@
-## Handoff update (2026-11-02: LUN 4 diagnostic image booted temporarily)
+## Handoff update (2026-11-02: FOGOS UFS LUN 4 found; root volume still pending)
 
-User reports package run `41499139060` completed. Downloaded artifact to
-`research/fogos-ci/run-41499139060/fogos-boot/fogos-boot.img` (16,531,456
-bytes), built from kernel run `41496489308` with
-`debug=0xc serial=3 cpus=1 keepsyms=1 fogos-ufs-probe=1`. Device
-`ZY32JNZ8K2` was present in fastboot. Ran `fastboot boot`; image transfer
-reported `Sending 'boot.img' (16144 KB) OKAY`, then `Booting OKAY` (3.156 s
-total). This is temporary boot only; no partitions were written. Await the
-user's screen photo/result, especially whether the UFS probe finds `userdata`
-on LUN 4 and whether root selection advances.
+Package run `41499139060` produced `research/fogos-ci/run-41499139060/fogos-boot/fogos-boot.img` (16,531,456 bytes), built from kernel run `41496489308` with `debug=0xc serial=3 cpus=1 keepsyms=1 fogos-ufs-probe=1`. Device `ZY32JNZ8K2` accepted temporary `fastboot boot`: `Sending 'boot.img' (16144 KB) OKAY`, `Booting OKAY` (3.156 s total); no partitions were written.
+
+The user's follow-up photo confirms `UFS: "userdata" on LUN 4: first block 0x166680, 235809 MiB, read-only` and `FOGOS UFS: read-only probe returned 0`. LUN selection and GPT lookup now work. The screen then reaches `FOGOS: setconf begin` and waits for an `IOMedia` root with `Apple_HFS` content, so a compatible root volume is the next blocker. Probe is still read-only; no device data has been changed. Next: identify/prepare a root filesystem path; the repository instructions require a fresh user confirmation before any destructive write to `userdata`.
 
 ## Handoff update (2026-11-02: LUN 4 kernel built; shim package queued)
 
