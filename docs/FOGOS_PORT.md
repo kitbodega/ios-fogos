@@ -306,3 +306,13 @@ identified `fogos` and returned `Sending OKAY` / `Booting OKAY` for
 ADB nor fastboot enumerated over USB. This alone does not show whether the
 progress-bar panic is gone; await the screen photo/description. No partition
 was written.
+
+The `-noprogress` image passed the previous PE assertion. The next photo shows
+a data abort at `PC 0xfffffe000796e2f8`, `LR 0xfffffe00079d7548`, `ESR
+0x96000005`, `FAR 0x828`. The kernel symbolizer resolves these to `sha1_init`
+and `IOPlatformExpertDevice::generatePlatformUUID`, called from `PE_init_iokit`.
+`corecrypto_sha1.c` uses `g_crypto_funcs`, but FOGOS has no corecrypto provider
+registered at this point; its BearSSL fallback was guarded for SWEET alone.
+Widened the built-in portable crypto paths (SHA-1, SHA-256, MD5, SHA-384/512,
+AES-CBC) and BearSSL wrapper guards to FOGOS. Patches 0032-0033 were checked
+locally; rebuild and device retest are pending.

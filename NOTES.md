@@ -2,13 +2,13 @@
 
 ## New request: Moto G34 5G (`fogos`)
 
-## Handoff update (2026-11-02: XNU progress-bar panic isolated)
+## Handoff update (2026-11-02: SHA-1 corecrypto provider panic isolated)
 
 The first shim photo showed a successful transfer to XNU entry `0x18147b488`. Patch `0086` enabled FOGOS early framebuffer diagnostics on the verified splash region at `0x85200000` (720x1600, stride 2880) and exposed the `fogos-fbcon` ADT node. The DEVELOPMENT kernel build succeeded in CI run `41367858735` on `9982515cbda3841372da91cc7fbb4319377bbce0`: `kernel.development.fogos` is 16,954,904 bytes, SHA-256 `208c847e4054616e00144f238c4618ed5cdf9cbad14f39d41b377d07cb81817e`. Full logs/artifacts are ignored under `research/fogos-ci/run-41367858735/`.
 
 The first boot with that kernel (`41368754050` package) reached `PE_init_iokit` and showed `pe_init.c:314 Assertion Failed: *delta >= 0`. Source inspection identifies the cause: the macOS-targeted XNU build turns on the progress bar by default, but FOGOS leaves Apple `boot_args.Video` zero; the progress offset loop underflows. Commit `568ab6b` makes `tools/mkpayload.py --fogos` append `-noprogress`. Offline payload verification passed. Shim-only CI run `41369104252` successfully packaged this argument with the same kernel; boot image SHA-256 `86fa263e6f8a43212c3c4672e9574529e1f33d7494935c25be2e61144f759b92`.
 
-The user restarted into fastboot and the workaround image was booted with `fastboot boot` on product `fogos`; both `Sending` and `Booting` returned `OKAY`. After 30 seconds USB no longer enumerated in ADB or fastboot. The latest screen result/photo is pending; do not assume the same panic recurred. No partition was written. Latest source/docs commit `19b350a` is pushed to `fork/fogos-port-init`.
+The user restarted into fastboot and booted the `-noprogress` image with `fastboot boot` on product `fogos`; both `Sending` and `Booting` returned `OKAY`. New photo shows the progress panic is gone, then a kernel data abort: `pc=0xfffffe000796e2f8`, `lr=0xfffffe00079d7548`, `ESR=0x96000005`, `FAR=0x828`. `llvm-symbolizer` maps PC to `sha1_init`, LR to `IOPlatformExpertDevice::generatePlatformUUID`, caller chain to `PE_init_iokit -> kernel_bootstrap_thread`. XNU `corecrypto_sha1.c` dereferences `g_crypto_funcs`; FOGOS has no corecrypto kext registered this early. Patch stack gates BearSSL SHA-1/MD5/SHA-384/512, SHA256 and AES-CBC software providers to SWEET only, despite FOGOS sharing the no-corecrypto situation. Widened those crypto guards/wrappers to FOGOS; patches 0032-0033 apply in a local worktree and the BearSSL wrapper/crypto files contain the FOGOS guards. Full kernel rebuild and retest pending. Userdata and all partitions remain untouched. Latest source/docs commit `19b350a` is pushed to `fork/fogos-port-init`.
 
 ### Handoff update (2026-11-02: first complete FOGOS build analyzed)
 
