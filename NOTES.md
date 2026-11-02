@@ -1,9 +1,20 @@
+## Handoff update (2026-11-02: root-assert fix built; package queued)
+
+Kernel run `41502908861` completed successfully on `macos-15-intel`; its log
+confirms `0095-fogos-no-iostoragefamily-root-assert.patch` applied. The
+push-triggered `fogos-shim` artifact from that run used fallback kernel
+`41405380749` and must not be used. Dispatched shim-only package run
+`41505704235` using kernel `41502908861` and
+`debug=0xc serial=3 cpus=1 keepsyms=1 rd=ufsroot0`. Await package completion,
+then download and temporarily boot its image. No device partitions were
+written.
+
 ## Handoff update (2026-11-02: build runner switched back to macos-15-intel)
 
 Run `41502001671` for commit `4271962` was queued on `macos-15`; per the user's
 request, changed `.github/workflows/xnu.yml` back to `runs-on: macos-15-intel`
 in commit `93f6884`, a runner that completed prior FOGOS kernel builds. New
-run `41502908861` is queued on `macos-15-intel`; predecessor `41502001671` is
+run `41502908861` was queued on `macos-15-intel`; predecessor `41502001671` is
 cancelled. Do not use the old push run's shim artifact because it used fallback
 kernel `41405380749`. Await build completion. No device partitions were
 written.
