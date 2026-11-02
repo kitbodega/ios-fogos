@@ -1,3 +1,14 @@
+## Handoff update (2026-11-02: corrected UFS patch pushed on main)
+
+Fixed patch `0088-fogos-ufs-readonly.patch` against the exact XNU buildtree from
+run `41427529247`: removed stale SWEET input-hook context, corrected its final
+hunk line counts, and made the IOKit root block context match the SWEET source.
+`git apply --check` passes every 0088 hunk against that buildtree. Also changed
+both workflow machine-config defaults to FOGOS. Commit `547229f` was pushed to
+`main`; the `xnu/patches/**` push triggers a new FOGOS kernel build. Do not poll
+Actions; wait for user's completion report. Removed obsolete remote branch
+`fogos-port-init` after its run completed. No partitions written.
+
 ## Handoff update (2026-11-02: pthread fixed; FOGOS UFS patch was skipped)
 
 The latest boot photo shows the kernel now passes `pthread_init()`, enters
