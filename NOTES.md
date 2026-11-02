@@ -1,3 +1,28 @@
+## Handoff update (2026-11-02: HFS+ root image prepared; no phone write)
+
+Prepared-copy facts from WSL: `/root/fogos-ios-root-work/fogos-ios-16.6.1-root-checked.img`
+is 17,179,869,184 bytes (16 GiB; HFS+ block size 4096, 4,194,304 blocks).
+The original `/root/fogos-ios-root-work/fogos-ios-16.6.1-root.img` was kept
+unchanged. `fsck.hfsplus -f -y` on the copy reports “The volume iOSRoot appears
+to be OK”; a subsequent read-only `fsck.hfsplus -f -n` still reports
+“Volume header needs minor repair” and exits nonzero. WSL cannot mount HFS+,
+so this is not an independent mount validation.
+
+Static inspection of the exact XNU buildtree at
+`research/fogos-ci/run-41427529247-buildtree/extracted/xnu/bsd/sweet_hfs/core/hfs_vfsops.c`
+shows HFS receives the device block count and separately reads the HFS volume's
+`totalBlocks`; its volume-header code tracks a filesystem alternate header
+separately from a partition-end alternate header when sizes differ. This makes
+a 16-GiB HFS+ volume at the start of the larger userdata partition appear
+supported by the code, but it is not yet verified by a device mount.
+
+Read-only host enumeration now returns no ADB or fastboot device. No phone
+partition was written; no GPT changes were made. Next: reconnect/boot the phone
+to fastboot, check its download limit and userdata partition size, and prepare
+the image in a fastboot-compatible sparse form if needed. Before any write,
+show the exact target `userdata`, image and erase consequence and obtain the
+required explicit confirmation. Keep all other partitions untouched.
+
 ## Handoff update (2026-11-02: mountroot reached; userdata is not HFS+)
 
 The user's follow-up photo after temporary image `41510236241` shows
