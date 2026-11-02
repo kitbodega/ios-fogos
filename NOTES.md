@@ -1,3 +1,4 @@
+Diagnostic shim package run `41394811024` dispatched with kernel artifact from run `41393303258`. Do not poll. Wait for user to report completion before downloading; no device partitions written.
 Diagnostic kernel build run `41393303258` dispatched on commit `b5079a5` with `machine_config=FOGOS`, DEVELOPMENT. Do not poll; wait for user to report completion. If successful, package exact kernel and temporary-boot it. No partition writes.
 ## Handoff update (2026-11-02: FOGOS stops after platform expert registration)
 
@@ -772,6 +773,7 @@ Frame review of `IMG_0294.MOV` confirms `read_random()` faults at the indirect `
 ## Handoff update (2026-11-02: 0014 PRNG patch hunk counts fixed)
 
 Review of `IMG_0301.MOV` shows the scrolling panic console works: the final screen retains the full dump, but panic remains PC 0, LR `0xfffffe0007454af4`, ESR `0x86000005`, FAR 0. Downloaded matching kernel from run `41385827184`; disassembly of `_read_random` still unconditionally calls the NULL `prng_funcs.refresh`. Its buildtree `osfmk/prng/prng_random.c` is the unpatched upstream text. Root cause: patch 0014 had malformed hunk counts (startup addition declared +140, actual +141; early `read_random` hunk declared +10, actual +11), so patch application discarded it. Corrected counts and new hunk offsets in commit `984b39c`; kernel build run `41388733349` reported complete by user. Shim-only packaging dispatched as run `41389580376` with that exact kernel ID. Do not use older kernels. User prefers no polling.
+
 
 
 
