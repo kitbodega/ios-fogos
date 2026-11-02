@@ -1,3 +1,7 @@
+## Handoff update (2026-11-02: smaller-font kernel booted temporarily)
+
+User explicitly asked to run `adb reboot bootloader` and boot the latest package. `adb.exe` was found at `C:\Android\sdk\platform-tools\adb.exe`; device `ZY32JNZ8K2` was online. `adb reboot bootloader` succeeded. Fastboot identified product `fogos`; temporary `fastboot boot research/fogos-ci/run-41381586762/fogos-boot/fogos-boot.img` returned `Sending OKAY` and `Booting OKAY` (16,164 KiB, ~6.4 sec). No flash/erase command ran; partitions untouched. Next: wait for user's screen observation/photo to determine whether font size and PRNG fix took effect.
+
 ## Handoff update (2026-11-02: CI concurrency fix)
 
 User screenshot confirmed why kernel run `41378944943` was cancelled: GitHub annotation says `Canceling since a higher priority waiting request for xnu-refs/heads/fogos-port-init exists`. Kernel build and shim-only package shared one concurrency group with `cancel-in-progress: true`, so starting shim packaging cancelled the kernel job. Workflow concurrency group now includes `shim` vs `kernel`, committed/pushed as `18328af`. Fresh FOGOS DEVELOPMENT kernel build run `41380094695` reported complete by user. Shim-only package run `41381586762` downloaded successfully. Boot image: `research/fogos-ci/run-41381586762/fogos-boot/fogos-boot.img` (16,551,936 bytes), packaged from kernel run `41380094695`. No partition written; user should test with temporary fastboot boot.
