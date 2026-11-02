@@ -1,10 +1,10 @@
 ## Handoff update (2026-11-02: build runner switched to macos-15)
 
 Run `41501494585` for commit `23d7050` was queued on `macos-15-intel`. Per the
-user's request, changed `.github/workflows/xnu.yml` to `runs-on: macos-15`.
-Pushing this workflow change will create a replacement push run; the workflow
-concurrency group cancels the queued predecessor. Await the new run's result;
-no device partitions were written.
+user's request, changed `.github/workflows/xnu.yml` to `runs-on: macos-15` in
+commit `4271962`. Replacement run `41502001671` is queued on `macos-15`; the
+previous run is cancelled by the workflow concurrency group. Await the new
+run's result. No device partitions were written.
 
 ## Handoff update (2026-11-02: root-selection panic identified)
 
