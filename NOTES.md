@@ -1267,3 +1267,12 @@ Review of `IMG_0301.MOV` shows the scrolling panic console works: the final scre
 
 
 # iOS 16 on sweet (Redmi Note 10 Pro, SM7150) - working notes
+
+## Handoff update (2026-11-02: HFSX journal flag cleared on device)
+
+- Device was in TWRP recovery (ADB serial `ZY32JNZ8K2`), with `/data` unmounted. No Android boot/recovery/modem/persist/GPT partitions were touched.
+- The earlier root-mount log showed the HFSX journal initialization failing on a read-only UFS device (`write_journal_header`, then `hfs_mountfs` error 22). The phone's `userdata` HFSX volume headers had attributes `80 00 21 00` (big-endian `0x80002100`), including `kHFSVolumeJournaledMask`.
+- Cleared only the journal bit in the primary and alternate HFSX headers using read-modify-write of aligned 4 KiB blocks on `/dev/block/sde26`: primary block 0 byte 1030; alternate last block (4194303) byte 3078. Wrote 4096 bytes per block and ran `sync`. This did not format or re-image userdata.
+- `fastboot boot research/fogos-ci/run-41510236241/fogos-boot/fogos-boot.img` completed: Sending 16144 KB `OKAY`; Booting `OKAY`.
+- **Still awaiting device result:** check whether the kernel now gets past HFS journal initialization and mounts `userdata`. If it still fails, capture the new mount log; do not repeat the 16 GiB userdata write.
+
