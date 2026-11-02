@@ -14,6 +14,9 @@ for the same guard. Added patch `0094-fogos-include-board-config-for-pthread.pat
 to include it before all three provider guards and before the matching
 `ksyn_waitq_element` layout guard. The next kernel build will use the requested
 `macos-15` runner. The previous image was temporary; no partitions written.
+Patch commit `8f0c73d` is pushed. FOGOS DEVELOPMENT kernel build run
+`41427047050` was dispatched on `macos-15`; wait for the user to report its
+result and do not poll Actions.
 
 ## Handoff update (2026-11-02: runner switched to macos-15; pthread panic persists)
 
