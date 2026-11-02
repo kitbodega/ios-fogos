@@ -1,6 +1,6 @@
 --- a/bsd/kern/sweet_amfi.c
 +++ b/bsd/kern/sweet_amfi.c
-@@ -272,10 +272,56 @@
+@@ -272,10 +272,58 @@
  	return 0;
  }
  
@@ -37,10 +37,12 @@
 +	}
 +}
 +
++#endif
  static const struct mac_policy_ops sweet_amfi_mac_ops = {
  	.mpo_vnode_check_signature = sweet_amfi_vnode_check_signature,
  };
  
++#if defined(ARM64_BOARD_CONFIG_SWEET)
 +static const struct mac_policy_ops sweet_sandbox_mac_ops = {
 +	.mpo_policy_syscall = sweet_sandbox_syscall,
 +};
