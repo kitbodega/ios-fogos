@@ -2,6 +2,15 @@
 
 ## New request: Moto G34 5G (`fogos`)
 
+## Handoff update (2026-11-02: screenshot proves XNU entry; early framebuffer console in progress)
+
+The user supplied a photo from the FOGOS shim boot. Visible diagnostics read `FOGOS shim entered`, parsed 10 Mach-O segments, built boot args, then `XNU jumping to kernel entry`; `JUMP` is `0x18147b488`. This is direct evidence that the shim transferred control to XNU. It does not prove XNU completed initialization: there is still no iOS UI or authorized ADB endpoint, and the phone remains on the Android splash underneath the text overlay. No partition was flashed or erased.
+
+Prepared the next diagnostic milestone: patch `0086-fogos-early-framebuffer-console.patch` adapts the existing SWEET early-stage markers and fbcon to the live FOGOS splash buffer at `0x85200000` (720x1600, stride 2880, 12 MiB). It marks the first XNU entry and adds an NC mapping for the 32 MiB block at `0x84000000`, then relocates early output across bootstrap page-table teardown. It also exposes an ADT `fogos-fbcon` node and makes `pe_serial.c` probe that node for FOGOS. The screenshot validates that the shim's splash address is visible; it does not validate XNU's later page-table/console path.
+
+Locally regenerated `dtb/fogos-moto-g34.adt` is 8,244 bytes. `tools/mkadt.py` and patch 0086 pass Python syntax / patch application checks: patches 0082-0086 apply in sequence to the XNU checkout through patch 0030. Full compile and hardware test remain outstanding. Next: commit/push these changes, dispatch `xnu.yml` for FOGOS DEVELOPMENT, inspect CI and compile diagnostics; if successful, package a new temporary boot image and inspect the screen/ADB. Keep fastboot boot only; do not flash.
+
+
 ### Handoff update (2026-11-02: first complete FOGOS build analyzed)
 
 **CI run 41360048907 finished with failure** on `9ad37d549d374990ff69e0edc03015fd0c93e410`.

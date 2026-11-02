@@ -271,3 +271,20 @@ without an authorized shell, serial console or panic log, XNU reaching its
 entry point or returning to Android cannot be confirmed. No partition was
 written. The next useful step is obtaining an authorized diagnostic channel
 before another blind attempt.
+
+
+## First visible XNU handoff (2026-11-02)
+
+The user-provided photo of the diagnostic boot shows `FOGOS shim entered`, 10
+Mach-O segments, constructed boot arguments, and `XNU jumping to kernel entry`.
+The jump address shown is `0x18147b488`. This confirms control reached XNU's
+entry point, but the phone has not reached an iOS UI or ADB endpoint. The image
+was started with `fastboot boot`; no partition was written.
+
+Patch `0086-fogos-early-framebuffer-console.patch` enables SWEET's early-stage
+XNU markers for FOGOS on the verified splash region at `0x85200000`
+(720x1600, stride 2880, 12 MiB), keeps the framebuffer reachable after
+bootstrap page-table teardown, and adds the `fogos-fbcon` ADT node for the
+framebuffer serial console. This should turn the next boot into a visible XNU
+stage trace. Its patch-stack application was checked locally; full XNU compile
+and another device attempt are still pending.
