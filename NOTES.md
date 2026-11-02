@@ -1,3 +1,7 @@
+## Handoff update (2026-11-02: BSD root diagnostic image temporarily booted)
+
+Downloaded `fogos-boot.img` from packaging run `41410953077` and issued `fastboot boot` from the local Platform Tools executable. Fastboot reported `Sending boot.img OKAY` and `Booting OKAY` (10.9 s). This confirms the image was transferred and launched; it does not establish that XNU completed boot. Await the user's screen photo/logs for the new `PE_lockdown_iokit`, `bsd_init`, `setconf`, and `vfs_mountroot` markers. No partitions were flashed or written.
+
 ## Handoff update (2026-11-02: post-IOKit diagnostic kernel reported successful)
 
 The user reports FOGOS DEVELOPMENT kernel run `41409691271` compiled successfully. Dispatched shim-only packaging run `41410953077` using that kernel with `debug=0xc serial=3 cpus=1 keepsyms=1 fogos-ufs-probe=1`. Do not poll Actions; wait for the user to report that packaging finished, then download `fogos-boot` and run it only with temporary `fastboot boot`. No partition writes.
