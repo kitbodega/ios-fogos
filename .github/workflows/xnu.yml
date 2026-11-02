@@ -62,6 +62,7 @@ jobs:
           path: research/fogos-ci/kernel
       - name: Create FOGOS ADT and payload
         run: |
+          mkdir -p dtb shim/out
           python3 tools/mkadt.py dtb/fogos-moto-g34.adt --fogos
           python3 tools/mkpayload.py \
             research/fogos-ci/kernel/kernel.development.fogos \
