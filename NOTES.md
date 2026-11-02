@@ -1,3 +1,15 @@
+## Handoff update (2026-11-02: LUN 4 diagnostic image booted temporarily)
+
+User reports package run `41499139060` completed. Downloaded artifact to
+`research/fogos-ci/run-41499139060/fogos-boot/fogos-boot.img` (16,531,456
+bytes), built from kernel run `41496489308` with
+`debug=0xc serial=3 cpus=1 keepsyms=1 fogos-ufs-probe=1`. Device
+`ZY32JNZ8K2` was present in fastboot. Ran `fastboot boot`; image transfer
+reported `Sending 'boot.img' (16144 KB) OKAY`, then `Booting OKAY` (3.156 s
+total). This is temporary boot only; no partitions were written. Await the
+user's screen photo/result, especially whether the UFS probe finds `userdata`
+on LUN 4 and whether root selection advances.
+
 ## Handoff update (2026-11-02: LUN 4 kernel built; shim package queued)
 
 The user's latest photo from temporary boot of package `41494933417` shows XNU
