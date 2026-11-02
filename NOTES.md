@@ -1,6 +1,6 @@
 ## Handoff update (2026-11-02: FOGOS trust-cache service unavailable path)
 
-The user’s new photo shows the corrected PRNG patch took effect: XNU progresses past read_random and now panics image4 interface not available at kern_trustcache.c:268. Existing patch 0015 explicitly handles missing Image4/AMFI services but was guarded only by defined(SWEET), so FOGOS fell through into the Apple panic. Updated patch 0015 to include <pexpert/arm64/board_config.h> and use ARM64_BOARD_CONFIG_SWEET || ARM64_BOARD_CONFIG_FOGOS for the unavailable-runtime behavior; generic log text says Platform. Hunk offsets were shifted for the added include. Next: commit/push, build and package exact kernel. No partition writes.
+The user’s new photo shows the corrected PRNG patch took effect: XNU progresses past read_random and now panics image4 interface not available at kern_trustcache.c:268. Existing patch 0015 explicitly handles missing Image4/AMFI services but was guarded only by defined(SWEET), so FOGOS fell through into the Apple panic. Updated patch 0015 to include <pexpert/arm64/board_config.h> and use ARM64_BOARD_CONFIG_SWEET || ARM64_BOARD_CONFIG_FOGOS for the unavailable-runtime behavior; generic log text says Platform. Hunk offsets were shifted for the added include. Commit 1c4cacf pushed; FOGOS DEVELOPMENT build run 41390163986 dispatched. User prefers no polling. No partition writes.
 
 ## Handoff update (2026-11-02: panic text scroll behavior)
 
