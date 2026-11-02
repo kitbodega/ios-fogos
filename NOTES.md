@@ -1,3 +1,14 @@
+## Handoff update (2026-11-02: FOGOS UFS support compiled; package queued)
+
+User reports the push-triggered build completed. Identified successful FOGOS
+kernel run `41492363792` on `main` (HEAD `547229f`, conclusion success). Its
+log shows `0088-fogos-ufs-readonly.patch` being applied, and the downloaded
+`kernel.development.fogos` (16,939,232 bytes) contains `FOGOS UFS: read-only
+probe returned`, `UFS: no board UFS node`, and `IOFindBSDRoot: UFS root` markers.
+Dispatched shim-only packaging run `41494933417` using that exact kernel with
+`debug=0xc serial=3 cpus=1 keepsyms=1 fogos-ufs-probe=1`. Wait for user package
+completion before download and temporary boot. No partitions written.
+
 ## Handoff update (2026-11-02: corrected UFS patch pushed on main)
 
 Fixed patch `0088-fogos-ufs-readonly.patch` against the exact XNU buildtree from
