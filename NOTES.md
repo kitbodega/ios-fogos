@@ -1,3 +1,28 @@
+## Handoff update (2026-11-02: TWRP wipe failed; device disconnected)
+
+User confirmed installation may erase Android and authorized formatting. TWRP
+3.7.1_12-Fogos was detected with root ADB; it maps `userdata` to
+`/dev/block/sde26`, size 247,348,572,160 bytes, matching fastboot's
+`partition-size:userdata`. `adb exec-in` accepted a 512-byte binary no-op to
+`/dev/null`, so host-to-recovery streaming is available without fastboot's
+768-MiB download limit.
+
+The `twrp format data` CLI command only opened the format confirmation page.
+Then `twrp wipe data` attempted `make_f2fs` on `/dev/block/sde26` and failed
+with error 255; the recovery log says `/data` was busy because it remained
+mounted through `/dev/block/dm-5`. The wipe did not report success. The HFS+
+image was not written. Since the formatter attempted to operate on userdata,
+its exact on-disk state is unknown and must be treated as potentially changed.
+No other partition or GPT was touched. The phone then disappeared from both
+ADB and fastboot. Resume only when it is visible in TWRP again; unmount `/data`
+and close the dm mapping before any format or raw write.
+
+An incomplete host copy at
+`research/fogos-ci/fogos-ios-16.6.1-root-checked.img` reached about 8.4 GiB
+before the copy was stopped. It is ignored by Git and must never be flashed;
+the complete source remains in WSL at
+`/root/fogos-ios-root-work/fogos-ios-16.6.1-root-checked.img`.
+
 ## Handoff update (2026-11-02: HFS+ root image prepared; no phone write)
 
 Prepared-copy facts from WSL: `/root/fogos-ios-root-work/fogos-ios-16.6.1-root-checked.img`
