@@ -1,3 +1,16 @@
+## Handoff update (2026-11-02: corrected pthread kernel verified; package queued)
+
+User reports kernel build `41432190971` completed. Its build log confirms
+patches `0093-fogos-builtin-pthread-provider.patch` and
+`0094-fogos-include-board-config-for-pthread.patch` were applied (no corrupt
+patch skip). Downloaded artifact `kernel.development.fogos` (16,938,112 bytes)
+to `research/fogos-ci/run-41432190971/xnu-kernel/`; the binary contains
+`FOGOS: built-in libpthread-514.100.2 registered` at offset 773,717, confirming
+the registration code is linked. Dispatched shim-only packaging run
+`41488725234` from `main`, using exact kernel run `41432190971` and
+`debug=0xc serial=3 cpus=1 keepsyms=1 fogos-ufs-probe=1`. Await user completion
+report before download/boot. No partitions written.
+
 ## Handoff update (2026-11-02: FOGOS branch promoted to main)
 
 User requested that the FOGOS development line become `main`. The GitHub repo
