@@ -4,7 +4,7 @@
 
 This project adapts XNU 8796 and the iPhone X iOS 16 userspace to the Moto G34. Some XNU work is based on [ios-sweet](https://github.com/dipa-studio/ios-sweet); the board support, ADT, and boot flow are being adapted for `fogos`.
 
-> **Experimental status.** The FOGOS kernel build and package succeeded in GitHub Actions (kernel run [41507254663](https://github.com/kitbodega/ios-fogos/actions/runs/41507254663), package run [41510236241](https://github.com/kitbodega/ios-fogos/actions/runs/41510236241)). A temporary boot found `userdata` on UFS LUN 4 and reached XNU's root mount. TWRP was used for a data wipe, but it failed because `/data` was busy; the iOS HFS+ image has not been written. No other partition or GPT was changed. There is no functional iOS interface yet.
+> **Experimental status.** The FOGOS kernel build and package succeeded in GitHub Actions (kernel run [41507254663](https://github.com/kitbodega/ios-fogos/actions/runs/41507254663), package run [41510236241](https://github.com/kitbodega/ios-fogos/actions/runs/41510236241)). A case-sensitive HFSX root image is now installed in the existing `userdata` partition. The matching XNU boot image was accepted by `fastboot boot`; the on-device root-mount result is pending. No other partition or GPT was changed. There is no functional iOS interface yet.
 
 ## Port status
 
@@ -14,10 +14,10 @@ This project adapts XNU 8796 and the iPhone X iOS 16 userspace to the Moto G34. 
 | Android shim | Temporary boot with `fastboot boot`; no kernel flashing required |
 | FOGOS ADT | Generated from Moto G34 board data |
 | UFS | Read-only probe works on-device and identifies `userdata` on LUN 4; it reuses the link left active by the bootloader |
-| iOS root filesystem | Local iOS 16.6.1 HFS+ image prepared in WSL; not installed on the phone |
+| iOS root filesystem | 16-GiB iOS 16.6.1 HFSX image written to `userdata`; XNU mount not confirmed yet |
 | CPU, display, touch, networking, and audio | Work remains; boot has not reached SpringBoard |
 
-The FOGOS UFS driver refuses writes even if passed `ufsrw=1`. It does not implement cold power-up or link recovery. The root image is at `/root/fogos-ios-root-work/fogos-ios-16.6.1-root.img` inside WSL; a repaired copy passes `fsck.hfsplus -f -y`, while the read-only check still reports a minor volume-header repair. TWRP's attempt to wipe `userdata` failed while `/data` was mounted; the image has not been written, and the state of `userdata` is uncertain. No other partition or GPT was changed.
+The FOGOS UFS driver refuses writes even if passed `ufsrw=1`. It does not implement cold power-up or link recovery. The root image is at `/root/fogos-ios-root-work/fogos-ios-16.6.1-root.img` inside WSL; a repaired copy passes `fsck.hfsplus -f -y`, while the read-only check still reports a minor volume-header repair. `userdata` was erased and the checked 16-GiB HFSX image was written there; other partitions and GPT were left intact. The latest temporary `fastboot boot` was accepted, but XNU's HFSX mount result is not yet known.
 
 ## Build and package
 

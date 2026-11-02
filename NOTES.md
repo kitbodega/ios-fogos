@@ -1,3 +1,27 @@
+## Handoff update (2026-11-02: HFSX root installed; temporary XNU boot accepted)
+
+After the user removed the PIN, TWRP 3.7.1_12-Fogos returned as root ADB.
+`/data` was unmounted, TWRP `wipe data` completed, and fastboot
+`erase userdata` returned `OKAY` in 0.752 s. This erased the full existing
+`userdata` partition (247,348,572,160 bytes); no GPT edit or other partition
+write was made.
+
+Streamed the checked WSL source
+`/root/fogos-ios-root-work/fogos-ios-16.6.1-root-checked.img` directly through
+`adb exec-in dd of=/dev/block/sde26 bs=4M`; the pipeline exited 0 and reported
+all 17,179,869,184 bytes written in 668.6 s. Ran `sync`; reading byte offset
+1024 from userdata returned `48 58`, the HFSX (case-sensitive HFS+) volume
+signature. The source's read-only `fsck.hfsplus -f -n` still reports its minor
+volume-header repair caveat; the copy was repaired with `fsck.hfsplus -f -y`.
+
+Then temporarily booted
+`research/fogos-ci/run-41510236241/fogos-boot/fogos-boot.img` with fastboot;
+sending (16,144 KiB) and booting both returned `OKAY`. This does not yet
+confirm XNU mounted the HFSX root. Await the user's screen/result and do not
+reboot the running test image before recording it. Android user data is erased;
+Android system partitions, bootloader, recovery, modem, persist, and GPT remain
+untouched.
+
 ## Handoff update (2026-11-02: TWRP wipe failed; device disconnected)
 
 User confirmed installation may erase Android and authorized formatting. TWRP
