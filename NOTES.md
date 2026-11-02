@@ -1,22 +1,22 @@
-## Handoff update (2026-11-02: IOMedia guard image booted temporarily)
+## Handoff update (2026-11-02: mountroot reached; userdata is not HFS+)
 
-The user's follow-up photo after temporary image `41505704235` shows
-`BSD root: ufsroot0, major 1, minor 0`, followed by
-`IOService.cpp:5130 Assertion failed: iomediaClass`. Patch `0095` passed the
-previous `IOBlockStorageDriver` assertion. XNU then calls
-`IOService::publishHiddenMedia()`, whose assertion and no-IOMedia fallback are
-currently SWEET-only. FOGOS has no `IOStorageFamily`, so widen both guards to
-FOGOS. Added `0096-fogos-no-iomedia-root-assert.patch`; `git apply --check`
-passes against the extracted XNU source from run `41427529247`. Kernel run
-`41507254663` completed successfully, and its log confirms `0096` was applied.
-Dispatched shim-only package run `41510236241` using that exact kernel with
+The user's follow-up photo after temporary image `41510236241` shows
+`UFS: "userdata" on LUN 4 ... read-only`, `BSD root: ufsroot0, major 1,
+minor 0`, then `FOGOS: vfs_mountroot begin`. The `IOService.cpp:5130` assertion
+is gone; patch `0096` let XNU proceed to mountroot. HFS then reports
+`unknown Volume Signature: bd12`, `hfs_mountfs returned error=22`, and
+`cannot mount root, errno = 19`. This confirms the current userdata contents
+are not a valid HFS+ root volume. UFS remains read-only; no phone data was
+changed. Next work is to determine and prepare a compatible iOS root volume.
+The repo instructions require confirmation before any destructive write to
+userdata; do not format or write it yet.
+
+Earlier milestone: kernel run `41507254663` succeeded and applied patch
+`0096`; package run `41510236241` used that exact kernel and
 `debug=0xc serial=3 cpus=1 keepsyms=1 rd=ufsroot0`. Downloaded
 `research/fogos-ci/run-41510236241/fogos-boot/fogos-boot.img` (16,531,456
-bytes). ADB saw `ZY32JNZ8K2` as `device`; `adb reboot bootloader` succeeded,
-then fastboot saw the phone and temporary `fastboot boot` returned
-`Sending OKAY`, `Booting OKAY` (3.883 s total). No device partitions were
-written. Await the user's screen photo/result for the `publishHiddenMedia`
-assertion and mountroot progress.
+bytes). ADB/fastboot temporary boot succeeded (`Sending OKAY`, `Booting OKAY`,
+3.883 s). No device partitions were written.
 
 ## Handoff update (2026-11-02: root-assert fix image booted temporarily)
 
