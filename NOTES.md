@@ -1,3 +1,7 @@
+## Handoff correction (2026-11-02: AMFI patch context retry)
+
+Kernel run `41537521545` succeeded, but its log still showed 0035/0036/0050 skipped: the `files.arm64` context in 0035 included a SWEET/FOGOS comment that only appeared later in the patch series. Removed that comment from the context and narrowed the hunk to the stable `SweetPlatformExpert.cpp` and `FogosCPU.cpp` entries. On a fresh extraction of the run's buildtree, 0035 now applies; after it, 0036 and 0050 both pass `git apply --check`. Rebuild after this correction; confirm the CI log has no skips for these patches before packaging.
+
 ## Handoff update (2026-11-02: boot-task platform panic traced to skipped AMFI patches)
 
 The user's latest photo from package `41536192141` shows a userspace panic: `boot task is not a platform binary`. It follows the `unentitled_ios_sim_launch=1` bypass, which got past the OSX/iOS spawn gate. Inspection of the exact build log for kernel run `41532075795` shows patch `0035-sweet-amfi-entitlements-platform-binaries.patch` was skipped because its `iokit/conf/files.arm64` hunk expected `SweetCPU.cpp`; the actual FOGOS file list contains `FogosCPU.cpp`. Consequently the AMFI MAC policy that marks validated root-volume binaries `CS_PLATFORM_BINARY` was absent. Patch `0036-sweet-amfi-cs-signed.patch` was also skipped as a cascade, so validated signatures were not marked `CS_SIGNED`. This explains the boot-task check.
