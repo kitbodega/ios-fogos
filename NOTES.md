@@ -1,6 +1,6 @@
 ## Handoff update (2026-11-02: CI concurrency fix)
 
-User screenshot confirmed why kernel run `41378944943` was cancelled: GitHub annotation says `Canceling since a higher priority waiting request for xnu-refs/heads/fogos-port-init exists`. Kernel build and shim-only package shared one concurrency group with `cancel-in-progress: true`, so starting shim packaging cancelled the kernel job. Workflow concurrency group now includes `shim` vs `kernel`, committed/pushed as `18328af`. Fresh FOGOS DEVELOPMENT kernel build dispatched as run `41380094695`. Do not dispatch/package shim until this build is complete; separate concurrency groups now prevent that from cancelling it. User prefers no polling.
+User screenshot confirmed why kernel run `41378944943` was cancelled: GitHub annotation says `Canceling since a higher priority waiting request for xnu-refs/heads/fogos-port-init exists`. Kernel build and shim-only package shared one concurrency group with `cancel-in-progress: true`, so starting shim packaging cancelled the kernel job. Workflow concurrency group now includes `shim` vs `kernel`, committed/pushed as `18328af`. Fresh FOGOS DEVELOPMENT kernel build run `41380094695` reported complete by user. Shim-only package run `41381586762` dispatched using that kernel ID. User prefers no polling; wait for user report before download.
 
 ## Handoff update (2026-11-02: include selected board config in PRNG units)
 
