@@ -7,9 +7,10 @@ previous `IOBlockStorageDriver` assertion. XNU then calls
 `IOService::publishHiddenMedia()`, whose assertion and no-IOMedia fallback are
 currently SWEET-only. FOGOS has no `IOStorageFamily`, so widen both guards to
 FOGOS. Added `0096-fogos-no-iomedia-root-assert.patch`; `git apply --check`
-passes against the extracted XNU source from run `41427529247`. Commit/push is
-next and will trigger another kernel build. The UFS driver remains read-only;
-no device data was changed.
+passes against the extracted XNU source from run `41427529247`. Commit
+`8c07f62` is pushed to `main`; the patch-path push triggers a new kernel build.
+Per the user's preference, do not poll Actions; await their completion report.
+The UFS driver remains read-only; no device data was changed.
 
 ## Handoff update (2026-11-02: root-assert fix image booted temporarily)
 
