@@ -1,3 +1,13 @@
+## Handoff update (2026-11-02: root-selection package queued)
+
+The prior boot used `fogos-ufs-probe=1`, which only probes/registers UFS and
+then continues generic root matching. Dispatched shim-only package run
+`41500341017` using kernel run `41496489308` and boot args
+`debug=0xc serial=3 cpus=1 keepsyms=1 rd=ufsroot0`. This selects the read-only
+UFS block device as the BSD root so the next boot can report the mountroot
+result. Await user package completion before download and temporary boot. No
+disk writes are enabled.
+
 ## Handoff update (2026-11-02: FOGOS UFS LUN 4 found; root volume still pending)
 
 Package run `41499139060` produced `research/fogos-ci/run-41499139060/fogos-boot/fogos-boot.img` (16,531,456 bytes), built from kernel run `41496489308` with `debug=0xc serial=3 cpus=1 keepsyms=1 fogos-ufs-probe=1`. Device `ZY32JNZ8K2` accepted temporary `fastboot boot`: `Sending 'boot.img' (16144 KB) OKAY`, `Booting OKAY` (3.156 s total); no partitions were written.
