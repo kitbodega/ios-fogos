@@ -1,13 +1,12 @@
 --- a/bsd/kern/kern_exit.c
 +++ b/bsd/kern/kern_exit.c
-@@ -1666,4 +1666,10 @@
- static bool
- proc_should_trigger_panic(proc_t p, int rv)
+@@ -1836,3 +1836,9 @@
+ proc_prepareexit(proc_t p, int rv, boolean_t perf_notify)
  {
 +#if defined(ARM64_BOARD_CONFIG_FOGOS)
 +	if (strcmp(p->p_name, "tzinit") == 0 && WIFEXITED(rv) && WEXITSTATUS(rv) == 30) {
-+		printf("FOGOS: continuing after tzinit exit 30 (read-only root)\n");
-+		return false;
++		printf("FOGOS: reporting tzinit EROFS as success to launchd\n");
++		rv = 0;
 +	}
 +#endif
- 	if (p == initproc || (p->p_crash_behavior & POSIX_SPAWN_PANIC_ON_EXIT) != 0) {
+ 	mach_exception_data_type_t code = 0, subcode = 0;

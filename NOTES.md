@@ -1368,3 +1368,7 @@ The latest boot reaches pid 18 `tzinit`, which exits normally with status 30 and
 ## Handoff update (2026-11-03: tzinit EROFS bypass booted)
 
 Kernel run `41558341756` succeeded on `71533648e4b6bd063948e0b36f930bb82666862b`. Patch `0100` ignores only a normal FOGOS `tzinit` exit status 30 (EROFS), allowing the boot sequence to proceed with root still readonly. Shim-only package `41560411063` used that exact kernel and the established args; embedded args verified. Temporary fastboot boot on `ZY32JNZ8K2` returned Sending/Booting OKAY. No partitions written. Await screen for the next task/panic.
+
+## Correction to 0100 (2026-11-03: normalize tzinit wait status)
+
+Boot `41560411063` still panicked with launchd's userspace message `boot task failure: tzinit - exited due to exit(30)`. The previous 0100 change only suppressed the kernel's critical-exit panic path and did not change the status delivered to launchd. Replaced 0100 with a FOGOS-only normalization in `proc_prepareexit`: for a normal `tzinit` exit status 30, report status 0 to the parent after logging. This targets the boot-task failure shown on-screen; root remains readonly. Patch apply-check passes against the prior buildtree. Rebuild and retry exact kernel; no userdata writes.
