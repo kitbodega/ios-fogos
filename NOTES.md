@@ -1360,3 +1360,7 @@ The latest phone screen now panics `Halt/Restart Timed Out @IOPlatformExpert.cpp
 ## Handoff update (2026-11-03: FOGOS AppleKeyStore stand-in booted)
 
 Kernel run `41556013266` succeeded on commit `82bcce2e41f03c6f8e79ce77849f2373b4b41ad5`; patch `0099-fogos-applestore.patch` adds the FOGOS-specific AppleKeyStore user client and personality that SWEET patch 0038 did not provide. Shim-only package `41557228548` used that exact kernel and boot args `debug=0xc serial=3 cpus=1 keepsyms=1 rd=ufsroot0 unentitled_ios_sim_launch=1`; embedded args verified. Temporary fastboot boot on `ZY32JNZ8K2` returned Sending/Booting OKAY. No partitions written. Await the next screen, especially AKS/keybag boot-task lines and whether it requests recovery again.
+
+## Handoff update (2026-11-03: tzinit exits with status 30)
+
+The latest boot reaches pid 18 `tzinit`, which exits normally with status 30 and triggers the launchd boot-task panic. Darwin errno 30 is `EROFS`; inference: tzinit's timezone update cannot write while FOGOS correctly keeps the root volume read-only. Added `0100-fogos-tzinit-readonly-exit.patch`: only on FOGOS, treat a normal `tzinit` exit status 30 as nonfatal and log the continuation, preserving MNT_RDONLY. This allows launchd to advance to the next boot task but does not set the timezone or modify the root. Patch apply-check passes against the prior buildtree. Compile, then package and temporarily boot exact kernel; no userdata writes.
