@@ -1372,3 +1372,54 @@ Kernel run `41558341756` succeeded on `71533648e4b6bd063948e0b36f930bb82666862b`
 ## Correction to 0100 (2026-11-03: normalize tzinit wait status)
 
 Boot `41560411063` still panicked with launchd's userspace message `boot task failure: tzinit - exited due to exit(30)`. The previous 0100 change only suppressed the kernel's critical-exit panic path and did not change the status delivered to launchd. Replaced 0100 with a FOGOS-only normalization in `proc_prepareexit`: for a normal `tzinit` exit status 30, report status 0 to the parent after logging. This targets the boot-task failure shown on-screen; root remains readonly. Patch apply-check passes against the prior buildtree. Rebuild and retry exact kernel; no userdata writes.
+
+
+## Handoff update (GitHub run 41563979595: opt-in writable FOGOS root)
+
+The latest boot photo reaches tzinit and reports exit status 30 (EROFS),
+consistent with the root remaining read-only. Replaced the tzinit exit-status
+normalization with an opt-in mount path. Patch 0100 clears MNT_RDONLY at initial
+root allocation only for boot argument fogos-rw=1. Patch 0101 enables bounded
+UFS writes only for the same argument. Patch 0098 now blocks the mount-phase-1
+read-only-to-read-write upgrade only when the root is still read-only. Without
+fogos-rw=1, FOGOS remains read-only.
+
+Published the changes to kitbodega/ios-fogos as commit
+0819885b702efd14094caad3750f824c7b707e32. Local patch-application checks pass
+against source from buildtree run 41549286242. GitHub Actions run 41563979595
+is active: checkout, patch copy, and dependency setup passed; the XNU Build
+step is still running. The automatic fogos-shim job succeeded but used the
+workflow's old default kernel run, so do not use that package. No device was
+booted with writes enabled and no userdata bytes were changed.
+
+After the kernel build succeeds, package its exact kernel with boot args
+debug=0xc serial=3 cpus=1 keepsyms=1 rd=ufsroot0
+unentitled_ios_sim_launch=1 fogos-rw=1. Obtain explicit confirmation before
+temporarily booting that package because HFS/UFS writes may modify userdata.
+
+## Handoff update (2026-11-03: fogos-rw package built from run 41563979595)
+
+Kernel run `41563979595` (commit `0819885b702efd14094caad3750f824c7b707e32`)
+completed successfully; both jobs passed. Shim-only packaging run
+`41566181845` succeeded (28 s) using exactly that kernel with boot args
+`debug=0xc serial=3 cpus=1 keepsyms=1 rd=ufsroot0
+unentitled_ios_sim_launch=1 fogos-rw=1`.
+
+Artifact: `research/fogos-ci/run-41566181845/fogos-boot.img` (16,560,128
+bytes, SHA-256 `F0BB0953CC3306A01505C778B18E33E607FE15841B84A57503224551F5ED896F`).
+The embedded `Image` cmdline reads exactly
+`debug=0xc serial=3 cpus=1 keepsyms=1 rd=ufsroot0 unentitled_ios_sim_launch=1 fogos-rw=1 -noprogress`,
+and the image contains the `fogos-rw` boot-arg parse sites from patches 0100 and
+0101 plus `FOGOS VFS`/`FOGOS UFS` markers, confirming it is the opt-in
+writable-root kernel and not an older artifact.
+
+Device `ZY32JNZ8K2` is currently in fastboot. The image has NOT been booted and
+no userdata bytes were changed. Booting it with `fogos-rw=1` can write to the
+HFS+/UFS root on userdata, so it needs explicit user confirmation first; the
+temporary `fastboot boot` itself does not flash a partition.
+
+Local working-tree state: `xnu/patches/0050-sweet-sandbox-policy.patch` still
+has an uncommitted edit that reverts the AMFI/Sandbox guard fix from
+`5eccbe9` (it would put `sweet_amfi_mac_ops` back inside the SWEET-only guard
+and break the FOGOS build). Do not commit it; restore the committed version
+before the next kernel build.
