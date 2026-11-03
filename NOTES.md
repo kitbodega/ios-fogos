@@ -1364,3 +1364,7 @@ Kernel run `41556013266` succeeded on commit `82bcce2e41f03c6f8e79ce77849f2373b4
 ## Handoff update (2026-11-03: tzinit exits with status 30)
 
 The latest boot reaches pid 18 `tzinit`, which exits normally with status 30 and triggers the launchd boot-task panic. Darwin errno 30 is `EROFS`; inference: tzinit's timezone update cannot write while FOGOS correctly keeps the root volume read-only. Added `0100-fogos-tzinit-readonly-exit.patch`: only on FOGOS, treat a normal `tzinit` exit status 30 as nonfatal and log the continuation, preserving MNT_RDONLY. This allows launchd to advance to the next boot task but does not set the timezone or modify the root. Patch apply-check passes against the prior buildtree. Compile, then package and temporarily boot exact kernel; no userdata writes.
+
+## Handoff update (2026-11-03: tzinit EROFS bypass booted)
+
+Kernel run `41558341756` succeeded on `71533648e4b6bd063948e0b36f930bb82666862b`. Patch `0100` ignores only a normal FOGOS `tzinit` exit status 30 (EROFS), allowing the boot sequence to proceed with root still readonly. Shim-only package `41560411063` used that exact kernel and the established args; embedded args verified. Temporary fastboot boot on `ZY32JNZ8K2` returned Sending/Booting OKAY. No partitions written. Await screen for the next task/panic.
