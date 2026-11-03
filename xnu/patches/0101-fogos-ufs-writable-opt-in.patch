@@ -1,0 +1,19 @@
+--- a/bsd/dev/sweet_ufs.c
++++ b/bsd/dev/sweet_ufs.c
+@@ -605,6 +605,8 @@
+ 	uint32_t rw = 0;
+ #if defined(ARM64_BOARD_CONFIG_SWEET)
+ 	PE_parse_boot_argn("ufsrw", &rw, sizeof(rw));
++#elif defined(ARM64_BOARD_CONFIG_FOGOS)
++	PE_parse_boot_argn("fogos-rw", &rw, sizeof(rw));
+ #endif
+ 	uint32_t cache = 0, wait = 0;
+ 	PE_parse_boot_argn("ufscache", &cache, sizeof(cache));
+@@ -661,5 +661,7 @@
+ #if defined(ARM64_BOARD_CONFIG_SWEET)
+ 	su.writable = (rw != 0);
++#elif defined(ARM64_BOARD_CONFIG_FOGOS)
++	su.writable = (rw != 0);
+ #else
+ 	su.writable = false;
+ #endif

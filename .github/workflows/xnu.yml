@@ -23,7 +23,7 @@ on:
         description: successful FOGOS kernel workflow run whose artifact to package
         default: "41405380749"
       boot_args:
-        description: kernel boot arguments (add fogos-ufs-probe=1 for the read-only UFS probe)
+        description: boot arguments (fogos-rw=1 enables UFS/root writes; fogos-ufs-probe=1 is read-only)
         default: "debug=0xc serial=3 cpus=1 keepsyms=1"
   push:
     branches: [main]

@@ -1,0 +1,24 @@
+--- a/bsd/vfs/vfs_subr.c
++++ b/bsd/vfs/vfs_subr.c
+@@ -1265,9 +1265,21 @@
+ 		{
+ 			uint32_t rootrw = 0;
+ 			if (PE_parse_boot_argn("rootrw", &rootrw, sizeof(rootrw)) && rootrw) {
+ 				mp->mnt_flag &= ~MNT_RDONLY;
+ 			}
+ 		}
+ #endif
++#if defined(ARM64_BOARD_CONFIG_FOGOS)
++		/*
++		 * Opt in to an initially writable root only when UFS writes are
++		 * enabled too (fogos-rw=1). The default remains read-only.
++		 */
++		{
++			uint32_t fogos_rw = 0;
++			if (PE_parse_boot_argn("fogos-rw", &fogos_rw, sizeof(fogos_rw)) && fogos_rw) {
++				mp->mnt_flag &= ~MNT_RDONLY;
++			}
++		}
++#endif
+ 
+ 		if (vfsp->vfc_mountroot) {

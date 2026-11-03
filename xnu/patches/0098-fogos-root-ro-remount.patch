@@ -1,11 +1,12 @@
 --- a/bsd/vfs/vfs_syscalls.c
 +++ b/bsd/vfs/vfs_syscalls.c
-@@ -1261,3 +1261,11 @@
+@@ -1261,3 +1261,12 @@
  		mp->mnt_kern_flag |= MNTK_WANTRDWR;
  	}
 +#if defined(ARM64_BOARD_CONFIG_FOGOS)
-+	/* Do not open the UFS root device for writing during mount-phase-1. */
-+	if ((mp->mnt_flag & MNT_ROOTFS) && (mp->mnt_kern_flag & MNTK_WANTRDWR)) {
++	/* Do not upgrade an initially read-only UFS root during mount-phase-1. */
++	if ((mp->mnt_flag & MNT_ROOTFS) && (mp->mnt_flag & MNT_RDONLY) &&
++	    (mp->mnt_kern_flag & MNTK_WANTRDWR)) {
 +		printf("FOGOS VFS: ignoring root RW remount; keeping it read-only\n");
 +		mp->mnt_kern_flag &= ~MNTK_WANTRDWR;
 +		mp->mnt_flag |= MNT_RDONLY;
