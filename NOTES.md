@@ -1423,3 +1423,20 @@ has an uncommitted edit that reverts the AMFI/Sandbox guard fix from
 `5eccbe9` (it would put `sweet_amfi_mac_ops` back inside the SWEET-only guard
 and break the FOGOS build). Do not commit it; restore the committed version
 before the next kernel build.
+
+## Handoff update (2026-11-02): AMFI rename patch 0103 in progress
+
+Build run 41577647009 (commit 1ec161, patch 0103 corrected) is still
+compiling; 0103 must apply for the MAC policy name to become "AMFI" instead of
+"SWEET AMFI", which is what launchd_cache_loader looks up. Previous build
+41575938524 (ee74d1) had 0103 skipped as corrupt and is unusable for
+this fix.
+
+Read-only path now reaches userspace: dirty bit cleared on the alternate HFS+
+header ( x80000100 ->  x80000000), UFS mounts read-only, root mounts
+read-only, then launchd_cache_loader fails with "Unable to find AMFI".
+
+Next: when build completes, verify 0103 applied in the log, package with
+debug=0xc serial=3 cpus=1 keepsyms=1 rd=ufsroot0 unentitled_ios_sim_launch=1
+(no fogos-rw), boot read-only, confirm "Security policy loaded: ... (AMFI)"
+and that launchd_cache_loader passes. No userdata writes.
