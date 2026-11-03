@@ -1,17 +1,14 @@
---- a/bsd/sweet_hfs/core/hfs_vfsops.c
-+++ b/bsd/sweet_hfs/core/hfs_vfsops.c
-@@ -199,3 +199,12 @@
- 	cmdflags = (u_int32_t)vfs_flags(mp) & MNT_CMDFLAGS;
- 	if (cmdflags & MNT_UPDATE) {
+--- a/bsd/vfs/vfs_syscalls.c
++++ b/bsd/vfs/vfs_syscalls.c
+@@ -1261,3 +1261,11 @@
+ 		mp->mnt_kern_flag |= MNTK_WANTRDWR;
+ 	}
 +#if defined(ARM64_BOARD_CONFIG_FOGOS)
-+		/* The bring-up root is deliberately read-only; launchd's rw remount
-+		 * must not try to write its HFS header or journal. */
-+		if ((vfs_flags(mp) & MNT_ROOTFS) && vfs_iswriteupgrade(mp)) {
-+			printf("FOGOS HFS: keeping root read-only after rw remount request\n");
-+			vfs_setflags(mp, MNT_RDONLY);
-+			return 0;
-+		}
++	/* Do not open the UFS root device for writing during mount-phase-1. */
++	if ((mp->mnt_flag & MNT_ROOTFS) && (mp->mnt_kern_flag & MNTK_WANTRDWR)) {
++		printf("FOGOS VFS: ignoring root RW remount; keeping it read-only\n");
++		mp->mnt_kern_flag &= ~MNTK_WANTRDWR;
++		mp->mnt_flag |= MNT_RDONLY;
++	}
 +#endif
- 		hfs_assert(data);
-
-
+ 	mp->mnt_flag &= ~(MNT_NOSUID | MNT_NOEXEC | MNT_NODEV |
