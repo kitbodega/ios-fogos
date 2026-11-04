@@ -27,6 +27,11 @@ hardlink-note limiter to FOGOS and adds a FOGOS-only log line for **every** non-
 `proc_prepareexit()` (`bsd/kern/kern_exit.c`) with signal, exit status, `proc_getcsflags()` and
 exit reason namespace/code. `patch -p1 --dry-run` is clean against the CI build tree.
 
+Committed as `06bfe54`; the push-triggered kernel build is run `41800036766`. The next step is a
+`shim_only` packaging run of that kernel with the same boot args, then `fastboot boot` and a photo
+of the console: the FOGOS exit lines will say with which signal `SpringBoard` dies. `README.md` was
+refreshed to match this state (writable root, current boot args, the three blockers above).
+
 ## Handoff update (2026-11-04: read-only root blocks first boot; trying fogos-rw=1)
 
 Package `41796891578` (kernel `41794634395`, patch 0103 + `unentitled_ios_sim_launch=1`) booted
