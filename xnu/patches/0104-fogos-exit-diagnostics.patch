@@ -1,0 +1,51 @@
+--- a/bsd/sweet_hfs/core/hfs_catalog.c
++++ b/bsd/sweet_hfs/core/hfs_catalog.c
+@@ -757,11 +757,12 @@
+ }
+ 
+ 
+-#if defined(ARM64_BOARD_CONFIG_SWEET)
++#if defined(ARM64_BOARD_CONFIG_SWEET) || defined(ARM64_BOARD_CONFIG_FOGOS)
+ /*
+- * SWEET: hard links made by Linux tools lack kHFSHasLinkChainBit and every
+- * lookup of them repairs (in memory) and reports it again; the console
+- * output slows boot down. Report the first few only.
++ * SWEET/FOGOS: hard links made by Linux tools lack kHFSHasLinkChainBit and
++ * every lookup of them repairs (in memory) and reports it again; the console
++ * output slows boot down (one line per open of the dyld shared cache).
++ * Report the first few only.
+  */
+ static int
+ sweet_hfs_link_note(void)
+--- a/bsd/kern/kern_exit.c
++++ b/bsd/kern/kern_exit.c
+@@ -1849,6 +1849,29 @@
+ 		proc_handle_critical_exit(p, rv);
+ 	}
+ 
++#if defined(ARM64_BOARD_CONFIG_FOGOS)
++	/*
++	 * Bring-up diagnostic: on FOGOS there is no working crash reporter or
++	 * syslog to inspect, so a daemon that dies just disappears from the
++	 * console (launchd only prints "Process(n) crashed: name"). Log every
++	 * non-init exit with the signal, exit status, code signing flags and
++	 * exit reason the kernel has, so crash loops can be diagnosed from the
++	 * serial console alone.
++	 */
++	if (p != initproc) {
++		if (p->p_exit_reason == OS_REASON_NULL) {
++			printf("FOGOS: pid %d (%s) exited: sig %d status %d cs 0x%x\n",
++			    proc_getpid(p), p->p_name, WTERMSIG(rv), WEXITSTATUS(rv),
++			    proc_getcsflags(p));
++		} else {
++			printf("FOGOS: pid %d (%s) exited: sig %d status %d cs 0x%x reason ns %d code 0x%llx\n",
++			    proc_getpid(p), p->p_name, WTERMSIG(rv), WEXITSTATUS(rv),
++			    proc_getcsflags(p), p->p_exit_reason->osr_namespace,
++			    p->p_exit_reason->osr_code);
++		}
++	}
++#endif
++
+ 	/*
+ 	 * Generate a corefile/crashlog if:
+ 	 *      The process doesn't have an exit reason that indicates no crash report should be created

@@ -1,3 +1,32 @@
+## Handoff update (2026-11-04: `fogos-rw=1` boots to SpringBoard)
+
+Package `41798483305` (kernel `41794634395` + `fogos-rw=1`) got past every earlier blocker. Serial
+console shows `tzinit` no longer failing, launchd spawning the daemon set (`askpermissionsd`,
+`healthd`, `navd`, `passd`, `powerd`, `mediaremoted`, `configd`, `fairplayd.h2`, `xpcproxy`,
+`accountsd`, `axassetsd`, ...), AKS stubs answering (`FOGOS AKS: sleepd set ...`), and
+`SpringBoard` spawning. So: writable root was the correct fix; the UFS write path works in
+practice (HFS writes the catalog, hardlink repair, etc.).
+
+Remaining, in order of importance:
+
+1. `Process(110) crashed: SpringBoard. Too many corpses being created.` SpringBoard crash-loops.
+   The console gives no reason (launchd prints only the name) and there is no crash reporter or
+   syslog to read on the device.
+2. `watchdogd: ERROR: Failed to receive watchdog_KICK service` then
+   `Process(95) crashed: watchdogd: Too many corpses being created`. `watchdog_KICK` is an IOKit
+   user client of Apple's closed watchdog kext; XNU has no such service, so watchdogd dies on
+   start and launchd throttles the respawn.
+3. `hfs: set hardlink bit on vol=IOSRoot cnid=321473 inoid=713143832` repeats endlessly. This is
+   a diagnostic printf in `bsd/sweet_hfs/core/hfs_catalog.c` (the in-memory repair for hard links
+   created by Linux `rsync` that lack `kHFSHasLinkChainBit`, e.g. the dyld shared cache). SWEET
+   already limits it to 8 lines, but the guard is `#if defined(ARM64_BOARD_CONFIG_SWEET)` so
+   FOGOS prints one line per lookup, which is very slow on a 115200 console.
+
+Patch `0104-fogos-exit-diagnostics.patch` addresses 3 and makes 1 diagnosable: it extends the
+hardlink-note limiter to FOGOS and adds a FOGOS-only log line for **every** non-init exit in
+`proc_prepareexit()` (`bsd/kern/kern_exit.c`) with signal, exit status, `proc_getcsflags()` and
+exit reason namespace/code. `patch -p1 --dry-run` is clean against the CI build tree.
+
 ## Handoff update (2026-11-04: read-only root blocks first boot; trying fogos-rw=1)
 
 Package `41796891578` (kernel `41794634395`, patch 0103 + `unentitled_ios_sim_launch=1`) booted
