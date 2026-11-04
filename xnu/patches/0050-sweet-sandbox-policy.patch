@@ -1,6 +1,6 @@
 --- a/bsd/kern/sweet_amfi.c
 +++ b/bsd/kern/sweet_amfi.c
-@@ -272,10 +272,63 @@
+@@ -272,10 +272,62 @@
  	return 0;
  }
  
