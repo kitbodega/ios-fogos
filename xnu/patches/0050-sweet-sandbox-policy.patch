@@ -1,6 +1,6 @@
 --- a/bsd/kern/sweet_amfi.c
 +++ b/bsd/kern/sweet_amfi.c
-@@ -272,10 +272,62 @@
+@@ -272,10 +272,63 @@
  	return 0;
  }
  
@@ -57,7 +57,8 @@
 +#endif
 +
  static struct mac_policy_conf sweet_amfi_mac_conf = {
- 	.mpc_name =
+-	.mpc_name = "SWEET AMFI",
++	.mpc_name =
 +#if defined(ARM64_BOARD_CONFIG_FOGOS)
 +	    "AMFI",
 +#else
