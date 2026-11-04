@@ -1,3 +1,35 @@
+## Handoff update (2026-11-04: read-only root blocks first boot; trying fogos-rw=1)
+
+Package `41796891578` (kernel `41794634395`, patch 0103 + `unentitled_ios_sim_launch=1`) booted
+and produced a *different* panic:
+
+    panic(cpu 8): userspace panic: boot task failure: tzinit - exited due to exit(30)
+
+So 0103 did its job: the kernel no longer panics in `proc_should_trigger_panic()` when a
+non-init critical process dies. This panic comes from launchd itself
+(`panic_kernel()` in `bsd/kern/kern_shutdown.c` is only reached through `reboot(RB_PANIC|RB_QUICK)`,
+i.e. launchd calls it): launchd treats `tzinit` as a boot task and panics when it exits non-zero.
+
+Root cause is the read-only root, not tzinit. `tzinit` initializes `/private/var/db/timezone` on
+first boot: it wants to create the `zoneinfo` directory/symlink and the `localtime` link. Offline
+inspection of `/home/uriel/fogos-ios-root.img` (7z, HFSX read-only; `hpmount`/libhfsp cannot open
+HFSX at all) shows `/private/var/db/timezone/localtime` present (36 bytes) but
+`/private/var/db/timezone/zoneinfo` missing and `/usr/share/zoneinfo` absent (only
+`/usr/share/zoneinfo.default`, which is what the IPSW ships — those links really are created on
+first boot). A read-only root breaks far more than tzinit: every daemon needs to create files under
+`/private/var` (run/lock files, tmp, databases).
+
+`bsd/dev/sweet_ufs.c` already implements the write path (`sweet_ufs_strategy` write branch,
+`ufs_write_blocks`, bounds re-check, bounce buffer, `DKIOCISWRITABLE`). It is opt-in and off by
+default: patch `0101` parses `fogos-rw=1` into `su.writable`, patch `0100` clears `MNT_RDONLY` on
+the root mount when the same boot-arg is set. Kernel `41794634395` includes both.
+
+Re-packaged it in shim-only run `41798483305` with
+`debug=0xc serial=3 cpus=1 keepsyms=1 rd=ufsroot0 unentitled_ios_sim_launch=1 fogos-rw=1`
+(`research/fogos-ci/run-41798483305/fogos-boot.img`) and `fastboot boot` returned OKAY. Result
+pending (screen only). If writes corrupt the volume, the master copy is still WSL
+`/home/uriel/fogos-ios-root.img`; re-flash costs ~11 min (674 s at 25 MB/s).
+
 ## Handoff update (2026-11-04: boot reaches launchd; WRONG_PLATFORM needs unentitled flag)
 
 The `fastboot boot` of package `41791593101` (kernel `41785981390`) reached userspace far enough
