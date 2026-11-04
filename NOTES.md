@@ -1,3 +1,26 @@
+## Handoff update (2026-11-04: dirty non-journaled root refuses to mount; patch 0105)
+
+Booting the 0104 kernel (`41801940833`) never reached userspace: `vfs_mountroot` failed in a loop
+
+    FOGOS: hfs_mountfs: cannot mount dirty non-journaled volumes
+    FOGOS: hfs_mountfs: encountered failure 22
+    FOGOS: cannot mount root, errno = 19
+
+`mount (4) failed` ... `mount (9) failed` is `vfs_mountroot` retrying; the boot never gets a root.
+
+Cause: the writable mount of the previous boot cleared `kHFSVolumeUnmountedMask` in the volume
+header (`hfs_vfsutils.c`, "mark the volume dirty"), and the hard reboot never restored it. HFS
+refuses a read-write mount of a dirty volume that has no journal (only `fsck_hfs` would fix it),
+and the image is deliberately non-journaled.
+
+`bsd/sweet_hfs/core/hfs_vfsutils.c` already had a bring-up bypass for this exact case, but gated on
+`#if defined(ARM64_BOARD_CONFIG_SWEET)`; FOGOS fell into the `EINVAL` path. Patch
+`0105-fogos-dirty-root-mount.patch` extends the bypass to FOGOS (root mounts only, other volumes
+still get `EINVAL`) and prints which board took it. `patch -p1 --dry-run` is clean.
+
+Consequence worth remembering: with a read-write non-journaled root, the volume is *always* dirty
+after a hard reboot, so 0105 is required for every subsequent boot, not just this one.
+
 ## Handoff update (2026-11-04: `fogos-rw=1` boots to SpringBoard)
 
 Package `41798483305` (kernel `41794634395` + `fogos-rw=1`) got past every earlier blocker. Serial
