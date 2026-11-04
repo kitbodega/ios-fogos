@@ -1,0 +1,23 @@
+--- a/bsd/kern/kern_exit.c
++++ b/bsd/kern/kern_exit.c
+@@ -1666,6 +1666,20 @@
+ static bool
+ proc_should_trigger_panic(proc_t p, int rv)
+ {
++#if defined(ARM64_BOARD_CONFIG_FOGOS)
++	/*
++	 * Bring-up: launchd marks the early boot jobs (tzinit, ...) as
++	 * panic-on-crash, but the data partition has not been initialized yet,
++	 * so some of them fail on the first boot. Report the exit and let the
++	 * boot continue instead of stopping at the first missing daemon.
++	 * launchd itself still panics: that is a real dead end.
++	 */
++	if (p != initproc) {
++		printf("FOGOS: critical exit of %s[%d] ignored (signal %d, exit %d)\n",
++		    p->p_name, proc_getpid(p), WTERMSIG(rv), WEXITSTATUS(rv));
++		return false;
++	}
++#endif
+ 	if (p == initproc || (p->p_crash_behavior & POSIX_SPAWN_PANIC_ON_EXIT) != 0) {
+ 		/* Always panic for launchd or equivalents */
+ 		return true;
