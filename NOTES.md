@@ -1,3 +1,21 @@
+## Handoff update (2026-11-04: boot reaches launchd; WRONG_PLATFORM needs unentitled flag)
+
+The `fastboot boot` of package `41791593101` (kernel `41785981390`) reached userspace far enough
+to panic in `psignal_internal`: `unexpected SIGKILL of launchd (CS_KILLED) with reason --
+namespace 9 code 0xe`. Namespace 9 is `OS_REASON_EXEC` and code 14 is
+`EXEC_EXIT_REASON_WRONG_PLATFORM` (`bsd/sys/reason.h`). The path is the `XNU_TARGET_OS_OSX`
+block in `exec_check_...` (`bsd/kern/kern_exec.c` around line 7410): a process whose
+`proc_platform()` is `PLATFORM_IOS` spawns an iOS binary without `psa_platform`, so the kernel
+requires `com.apple.private.security.no-sandbox` or the `unentitled_ios_sim_launch` boot-arg.
+This attempt was packaged without that boot-arg; the earlier AMFI panic had it.
+
+Re-packaged the same kernel (`41785981390`) with
+`debug=0xc serial=3 cpus=1 keepsyms=1 rd=ufsroot0 unentitled_ios_sim_launch=1` in run
+`41793585560` (`research/fogos-ci/run-41793585560/fogos-boot.img`) and `fastboot boot` returned
+OKAY. So patch 0102 did get past `launchd_cache_loader`; the next blocker to watch is whatever
+comes after launchd starts spawning. The phone rebooted itself to fastboot after the panic, so no
+manual key combination was needed.
+
 ## Handoff update (2026-11-04: iOS root reinstalled, kernel with AMFI service booted)
 
 `userdata` had been reformatted back to Android ext4 (byte 1024 read `0d 6b 6b 03`), so the iOS
