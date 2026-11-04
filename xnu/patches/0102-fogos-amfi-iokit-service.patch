@@ -1,0 +1,175 @@
+diff --git a/iokit/Kernel/arm/FogosAMFI.cpp b/iokit/Kernel/arm/FogosAMFI.cpp
+new file mode 100644
+index 0000000..eb89e42
+--- /dev/null
++++ b/iokit/Kernel/arm/FogosAMFI.cpp
+@@ -0,0 +1,142 @@
++/*
++ * Built-in AppleMobileFileIntegrity IOKit service for FOGOS.
++ *
++ * launchd_cache_loader does not use the "AMFI" MAC policy. After validating
++ * /System/Library/xpc/launchd.plist and its detached signature, it asks the
++ * closed AMFI kext whether the plist cdhash is trusted:
++ *
++ *   IOServiceGetMatchingService("AppleMobileFileIntegrity")
++ *   IOServiceOpen(service, mach_task_self(), 0, &connection)
++ *   IOConnectCallMethod(connection, 6, &one, 1, cdhash, cdhash_len, ...)
++ *
++ * Without that service the loader aborts with "Unable to find AMFI" and
++ * launchd panics. XNU has no such kext, so this file publishes a stand-in.
++ *
++ * Selector 6 is answered from the same policy the built-in AMFI MAC policy
++ * applies (bsd/kern/sweet_amfi.c): every signed binary on the root volume is
++ * a platform binary, so the root volume acts as the trust cache. The call is
++ * still shape-checked (one scalar equal to 1 and a 20- or 32-byte cdhash) and
++ * every cdhash is logged. Malformed calls and unknown selectors fail with
++ * kIOReturnBadArgument / kIOReturnUnsupported.
++ *
++ * This is not Apple's AMFI: there is no SEP, no Image4 and no real trust
++ * cache (patch 0015 leaves trust_cache_rt NULL). It exists so the boot task
++ * can continue, and it identifies itself as "FOGOS AMFI" on the console.
++ */
++#include <pexpert/arm64/board_config.h>
++
++#if defined(ARM64_BOARD_CONFIG_FOGOS)
++#include <IOKit/IOService.h>
++#include <IOKit/IOUserClient.h>
++#include <IOKit/IOKitKeys.h>
++#include <IOKit/IOLib.h>
++#include <IOKit/IOMemoryDescriptor.h>
++#include <sys/proc.h>
++
++enum {
++	kAMFICheckTrustCache = 6,
++};
++
++class AppleMobileFileIntegrity : public IOService {
++	OSDeclareDefaultStructors(AppleMobileFileIntegrity);
++
++public:
++	bool start(IOService *provider) APPLE_KEXT_OVERRIDE;
++};
++
++OSDefineMetaClassAndStructors(AppleMobileFileIntegrity, IOService);
++
++bool
++AppleMobileFileIntegrity::start(IOService *provider)
++{
++	if (!IOService::start(provider)) {
++		return false;
++	}
++	setProperty(kIOUserClientClassKey, "AppleMobileFileIntegrityUserClient");
++	registerService();
++	IOLog("FOGOS AMFI: AppleMobileFileIntegrity registered\n");
++	return true;
++}
++
++class AppleMobileFileIntegrityUserClient : public IOUserClient {
++	OSDeclareDefaultStructors(AppleMobileFileIntegrityUserClient);
++
++public:
++	IOReturn clientClose(void) APPLE_KEXT_OVERRIDE;
++	IOReturn externalMethod(uint32_t selector, IOExternalMethodArguments *args,
++	    IOExternalMethodDispatch *dispatch, OSObject *target,
++	    void *reference) APPLE_KEXT_OVERRIDE;
++};
++
++OSDefineMetaClassAndStructors(AppleMobileFileIntegrityUserClient, IOUserClient);
++
++IOReturn
++AppleMobileFileIntegrityUserClient::clientClose(void)
++{
++	terminate();
++	return kIOReturnSuccess;
++}
++
++static void
++fogos_amfi_log_cdhash(const uint8_t *cdhash, uint32_t len)
++{
++	static const char digits[] = "0123456789abcdef";
++	char hex[2 * 32 + 1];
++	char name[32];
++	uint32_t i;
++
++	for (i = 0; i < len; i++) {
++		hex[i * 2] = digits[cdhash[i] >> 4];
++		hex[i * 2 + 1] = digits[cdhash[i] & 0xf];
++	}
++	hex[i * 2] = '\0';
++	proc_selfname(name, sizeof(name));
++	IOLog("FOGOS AMFI: %s cdhash %s trusted (root volume is the platform root)\n",
++	    name, hex);
++}
++
++IOReturn
++AppleMobileFileIntegrityUserClient::externalMethod(uint32_t selector,
++    IOExternalMethodArguments *args, __unused IOExternalMethodDispatch *dispatch,
++    __unused OSObject *target, __unused void *reference)
++{
++	if (selector != kAMFICheckTrustCache) {
++		IOLog("FOGOS AMFI: unsupported selector %u\n", selector);
++		return kIOReturnUnsupported;
++	}
++
++	if (args->scalarInputCount != 1 || args->scalarInput == NULL ||
++	    args->scalarInput[0] != 1) {
++		IOLog("FOGOS AMFI: selector 6 bad scalar input\n");
++		return kIOReturnBadArgument;
++	}
++
++	uint8_t cdhash[32];
++	uint32_t len;
++
++	if (args->structureInputDescriptor != NULL) {
++		len = (uint32_t)args->structureInputDescriptor->getLength();
++		if (len != 20 && len != 32) {
++			IOLog("FOGOS AMFI: selector 6 bad cdhash length %u\n", len);
++			return kIOReturnBadArgument;
++		}
++		if (args->structureInputDescriptor->readBytes(0, cdhash, len) != len) {
++			return kIOReturnBadArgument;
++		}
++	} else {
++		len = args->structureInputSize;
++		if (len != 20 && len != 32) {
++			IOLog("FOGOS AMFI: selector 6 bad cdhash length %u\n", len);
++			return kIOReturnBadArgument;
++		}
++		if (args->structureInput == NULL) {
++			return kIOReturnBadArgument;
++		}
++		memcpy(cdhash, args->structureInput, len);
++	}
++
++	fogos_amfi_log_cdhash(cdhash, len);
++	args->scalarOutputCount = 0;
++	return kIOReturnSuccess;
++}
++#endif /* ARM64_BOARD_CONFIG_FOGOS */
+diff --git a/iokit/KernelConfigTables.cpp b/iokit/KernelConfigTables.cpp
+index d40b366..edaca7a 100644
+--- a/iokit/KernelConfigTables.cpp
++++ b/iokit/KernelConfigTables.cpp
+@@ -64,6 +64,13 @@ const char * gIOKernelConfigTables =
+     "     'IOProviderClass' = IOResources;"
+     "     'IOMatchCategory' = AppleKeyStore;"
+     "   },"
++#endif
++#if defined(ARM64_BOARD_CONFIG_FOGOS)
++    "   {"
++    "     'IOClass'         = AppleMobileFileIntegrity;"
++    "     'IOProviderClass' = IOResources;"
++    "     'IOMatchCategory' = AppleMobileFileIntegrity;"
++    "   },"
+ #endif
+     "   {"
+     "     'IOClass'         = IOPanicPlatform;"
+diff --git a/iokit/conf/files.arm64 b/iokit/conf/files.arm64
+index 434b734..da37a50 100644
+--- a/iokit/conf/files.arm64
++++ b/iokit/conf/files.arm64
+@@ -11,3 +11,4 @@ iokit/Kernel/arm/SweetPlatformExpert.cpp                         optional iokitc
+ iokit/Kernel/arm/FogosCPU.cpp                                    optional iokitcpp
+ iokit/Kernel/arm/SweetEntitlements.cpp                           optional iokitcpp
+ iokit/Kernel/arm/FogosKeyStore.cpp                               optional iokitcpp
++iokit/Kernel/arm/FogosAMFI.cpp                                   optional iokitcpp

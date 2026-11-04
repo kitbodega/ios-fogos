@@ -1,3 +1,33 @@
+## Handoff update (2026-11-03: "Unable to find AMFI" is a missing IOKit service, not the MAC policy)
+
+The panic string `Unable to find AMFI` does not come from the "AMFI" MAC policy. It comes from
+`launchd_cache_loader`, which validates `/System/Library/xpc/launchd.plist` and its detached
+signature, then asks Apple's closed AMFI kext whether that cdhash is trusted. The traced binary
+imports `IOServiceMatching`, `IOServiceGetMatchingService`, `IOServiceOpen` and
+`IOConnectCallMethod`, but no `__mac_syscall`; its strings include `Unable to find AMFI`,
+`Unable to connect to AMFI` and `cdhash: %s is trusted/not in trust cache`. Recovered ABI:
+`IOServiceMatching("AppleMobileFileIntegrity")`, `IOServiceOpen(type 0)`,
+`IOConnectCallMethod(conn, 6, scalar={1}, 1, cdhash, len, NULL, NULL, NULL, NULL)`;
+`kIOReturnNotFound` (0xE00002F0) is what the loader prints as "not in trust cache". So renaming
+the SWEET MAC policy to "AMFI" (0050) changes nothing: `__mac_syscall` also requires
+`mpo_policy_syscall`, which the built-in policy does not implement, and the loader never calls it.
+
+New patch `xnu/patches/0102-fogos-amfi-iokit-service.patch` publishes a built-in
+`AppleMobileFileIntegrity` IOService plus user client (`iokit/Kernel/arm/FogosAMFI.cpp`, a
+`KernelConfigTables.cpp` personality matching `IOResources`, and an `iokit/conf/files.arm64`
+entry). Selector 6 is shape-checked (one scalar equal to 1 and a 20- or 32-byte cdhash), logs the
+caller and the cdhash, and answers success, which matches the existing policy in
+`bsd/kern/sweet_amfi.c` where every signed root-volume binary is `CS_PLATFORM_BINARY`. Unknown
+selectors return `kIOReturnUnsupported`, malformed calls `kIOReturnBadArgument`. This is a
+stand-in, not Apple's AMFI (no SEP, no Image4, `trust_cache_rt` is NULL per patch 0015); it exists
+so the boot task can continue and so the next selectors the system wants appear on the console.
+
+Verified: on a clean worktree of the exact buildtree from run `41778009795` (which skipped 0050),
+`0050-sweet-sandbox-policy.patch` then `0102-fogos-amfi-iokit-service.patch` both pass
+`git apply --check` and apply. Patch file is LF-only with a final newline. Nothing has been
+committed, pushed, built or flashed since run `41779687579` was cancelled; the phone still has
+Android in `userdata` and the stock boot image.
+
 ## Handoff correction (2026-11-02: AMFI source registration moved after FOGOS CPU patch)
 
 Kernel run `41540348442` completed successfully, but its log still showed 0035 skipped at `iokit/conf/files.arm64:10`, followed by 0036 and 0050 skipped. Root cause: patch 0018 is skipped in the FOGOS build, so the file list does not contain `SweetCPU.cpp` when 0035 runs; patch 0092 adds `FogosCPU.cpp` later. Removed the file-list hunk from 0035 so its AMFI changes can apply independently, and added final patch `0097-fogos-amfi-entitlements-source.patch` to register `SweetEntitlements.cpp` after 0092.
