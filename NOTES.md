@@ -1,3 +1,23 @@
+## Handoff update (2026-11-04: iOS root reinstalled, kernel with AMFI service booted)
+
+`userdata` had been reformatted back to Android ext4 (byte 1024 read `0d 6b 6b 03`), so the iOS
+root was written again. Source image: WSL `/home/uriel/fogos-ios-root.img`, 17,179,869,184 bytes,
+`fsck.hfsplus -f -n` reports "The volume iOSRoot appears to be OK", non-journaled. The image was
+streamed from WSL with the Windows `adb.exe` via interop (`dd bs=16M | adb.exe exec-in "dd
+of=/dev/block/sde26 bs=4M"`), 674 s at 25 MB/s, `dd_rc=0`. `sync` OK. On-device checks: offset
+1024 = `48 58`, primary and alternate volume attributes both `0x80000100` (journal bit clear).
+
+Kernel run `41785981390` (commit `ebbe45f`) succeeded and its log shows 0035, 0036, 0050, 0092,
+0097 and 0102 applied (no skip for those). Shim-only run `41791593101` packaged that kernel with
+`debug=0xc serial=3 cpus=1 keepsyms=1 rd=ufsroot0 -noprogress`; artifact
+`research/fogos-ci/run-41791593101/fogos-boot.img`. `fastboot boot` returned OKAY for both send
+and boot. The phone then disappeared from USB (expected: XNU has no USB enumeration), so the
+result must be read from the screen. Previous blocker to watch: `Unable to find AMFI` from
+`launchd_cache_loader`; patch 0102 should now answer selector 6.
+
+Note for streaming: WSL-native adb cannot see the phone (no USB passthrough), and `adb exec-in`
+stdout is not relayed through the interop pipe, but stdin integrity is fine (1 MiB md5 matched).
+
 ## Handoff update (2026-11-03: "Unable to find AMFI" is a missing IOKit service, not the MAC policy)
 
 The panic string `Unable to find AMFI` does not come from the "AMFI" MAC policy. It comes from
