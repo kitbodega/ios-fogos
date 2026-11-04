@@ -46,6 +46,50 @@ fastboot boot fogos-boot.img
 
 Use `fastboot boot` for diagnostics. Do not write the root image to `userdata` until the user confirms the exact destructive operation; it will replace Android user data. No GPT edits are planned.
 
+## Installing iOS on `userdata` (destructive)
+
+> **Warning.** This replaces Android user data on `userdata`. All other partitions (boot, vendor_boot, system, recovery, modem, persist, GPT) are left untouched. Confirm each step; use temporary `fastboot boot` only.
+
+**Prerequisites (host/WSL):**
+- A successful FOGOS kernel build (run ID `KERNEL_RUN_ID`).
+- An iOS 16.6.1 (iPhone10,3) HFS+ root image, non-journaled, ~16 GiB, e.g. `/root/fogos-ios-root-work/fogos-ios-16.6.1-root-checked.img` in WSL (built by `tools/mkiosroot.sh` without `-J`).
+
+**1. Erase userdata (fastboot):**
+```sh
+fastboot erase userdata
+```
+
+**2. Stream the root image to userdata (TWRP/adb, ~11 min):**
+```sh
+wsl -u root -e bash -c 'cat /root/fogos-ios-root-work/fogos-ios-16.6.1-root-checked.img | /mnt/c/Android/sdk/platform-tools/adb.exe exec-in "dd of=/dev/block/sde26 bs=4M"'
+adb shell sync
+```
+Verify the HFSX signature: `adb shell "dd if=/dev/block/sde26 bs=1 skip=1024 count=2 2>/dev/null | od -An -tx1"` should print `48 58`.
+
+**3. Clear the HFS journal and dirty bits (read-modify-write, 4 KiB blocks):**
+```sh
+# primary header: byte offset 1030 (journal) and 1028 (attributes)
+# alternate header: last 4 KiB block, byte offsets 3078 and 3076
+# clear 0x20 (journal) and 0x09 (dirty/inconsistent) in the third byte of each attributes field
+```
+(See NOTES.md for the exact `dd` commands; only two 4-byte fields change.)
+
+**4. Package the kernel with read-only boot args:**
+```sh
+gh workflow run xnu.yml --repo kitbodega/ios-fogos --ref main \
+  -f shim_only=true -f kernel_run_id=KERNEL_RUN_ID \
+  -f 'boot_args=debug=0xc serial=3 cpus=1 keepsyms=1 rd=ufsroot0 unentitled_ios_sim_launch=1'
+```
+
+**5. Boot temporarily (no flash):**
+```sh
+fastboot boot fogos-boot.img
+```
+
+**6. Iterate:** each panic → fix in `xnu/patches/` → rebuild → repackage → re-boot. No further partition writes except re-running steps 2-3.
+
+**To return to Android:** boot TWRP and run `make_f2fs -l data /dev/block/sde26`, then reboot. The stock `boot`/`vendor_boot` were never overwritten.
+
 ## Local compile checks
 
 To run an individual kernel compile check from WSL, download the `xnu-buildtree` artifact and the build log, then use `tools/xnu-cc.py`. The port guide describes the workflow, stock DTB facts, and current blockers: [docs/FOGOS_PORT.md](docs/FOGOS_PORT.md).
