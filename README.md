@@ -52,7 +52,7 @@ Use `fastboot boot` for diagnostics. Do not write the root image to `userdata` u
 
 **Prerequisites (host/WSL):**
 - A successful FOGOS kernel build (run ID `KERNEL_RUN_ID`).
-- An iOS 16.6.1 (iPhone10,3) HFS+ root image, non-journaled, ~16 GiB, e.g. `/root/fogos-ios-root-work/fogos-ios-16.6.1-root-checked.img` in WSL (built by `tools/mkiosroot.sh` without `-J`).
+- An iOS 16.6.1 (iPhone10,3) HFS+ root image, non-journaled, ~16 GiB (built by `tools/mkiosroot.sh` without `-J`). Keep it outside the repo (ignored).
 
 **1. Erase userdata (fastboot):**
 ```sh
@@ -61,7 +61,7 @@ fastboot erase userdata
 
 **2. Stream the root image to userdata (TWRP/adb, ~11 min):**
 ```sh
-wsl -u root -e bash -c 'cat /root/fogos-ios-root-work/fogos-ios-16.6.1-root-checked.img | /mnt/c/Android/sdk/platform-tools/adb.exe exec-in "dd of=/dev/block/sde26 bs=4M"'
+wsl -u root -e bash -c 'cat /path/to/fogos-ios-16.6.1-root-checked.img | /mnt/c/Android/sdk/platform-tools/adb.exe exec-in "dd of=/dev/block/sde26 bs=4M"'
 adb shell sync
 ```
 Verify the HFSX signature: `adb shell "dd if=/dev/block/sde26 bs=1 skip=1024 count=2 2>/dev/null | od -An -tx1"` should print `48 58`.
