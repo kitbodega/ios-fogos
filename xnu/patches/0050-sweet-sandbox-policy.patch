@@ -58,11 +58,11 @@
 +
  static struct mac_policy_conf sweet_amfi_mac_conf = {
  	.mpc_name =
-#if defined(ARM64_BOARD_CONFIG_FOGOS)
- 	    "AMFI",
-#else
- 	    "SWEET AMFI",
-#endif
++#if defined(ARM64_BOARD_CONFIG_FOGOS)
++	    "AMFI",
++#else
++	    "SWEET AMFI",
++#endif
  	.mpc_fullname = "SWEET built-in Mobile File Integrity",
 @@ -293,5 +341,10 @@
  	int error = mac_policy_register(&sweet_amfi_mac_conf, &sweet_amfi_mac_handle, NULL);
