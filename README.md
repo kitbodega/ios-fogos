@@ -4,7 +4,7 @@
 
 This project adapts XNU 8796 and the iPhone X iOS 16.6.1 userspace to the Moto G34. Some XNU work is based on [ios-sweet](https://github.com/dipa-studio/ios-sweet); the board support, ADT, UFS driver, and boot flow are adapted for `fogos`.
 
-> **Experimental status (2026-11-04).** The kernel boots from a temporary `fastboot boot` image and reaches a full iOS 16 userspace: `launchd` starts, the daemon set spawns (`configd`, `powerd`, `accountsd`, `fairplayd.h2`, `xpcproxy`, `healthd`, ...), AKS calls are answered by kernel stubs, and `SpringBoard` is spawned. `SpringBoard` currently crash-loops, so there is no usable iOS interface yet. Only `userdata` is used for iOS; GPT, `boot`, `vendor_boot`, `recovery`, `modem`, `persist` and the partition backups are untouched.
+> **Status: not working yet (experimental, 2026-11-04).** The kernel can boot from a temporary `fastboot boot` image and reach iOS userspace (`launchd` and core daemons start, AKS calls answered by stubs, `SpringBoard` spawned), but there is **no usable iOS UI**: `SpringBoard` crash-loops and the bring-up hits blocking errors. Only `userdata` is used for iOS; GPT, `boot`, `vendor_boot`, `recovery`, `modem`, `persist` and partition backups are left untouched.
 
 ## Port status
 
@@ -29,11 +29,14 @@ debug=0xc serial=3 cpus=1 keepsyms=1 rd=ufsroot0 unentitled_ios_sim_launch=1 fog
 - `unentitled_ios_sim_launch=1` lets `launchd` spawn iOS binaries without the `com.apple.private.security.no-sandbox` entitlement.
 - `fogos-rw=1` clears `MNT_RDONLY` on the root mount and enables the UFS write path. Without it, first boot cannot create `/var/db/timezone/*` and `launchd` panics with `boot task failure: tzinit - exited due to exit(30)`.
 
-## Current blockers
+## Known errors / blockers (current)
 
-1. **`SpringBoard` crash loop.** `launchd` reports `Process(N) crashed: SpringBoard. Too many corpses being created.` with no further detail; the device has no working crash reporter or syslog. Patch `0104` logs every non-init exit (signal, status, code-signing flags, exit reason) to the serial console so the cause can be read from the screen.
-2. **`watchdogd` cannot start.** It asks for the `watchdog_KICK` IOKit user client provided by Apple's closed watchdog kext, which this kernel does not have, so it dies and is respawned until `launchd` throttles it.
-3. **HFS hard-link repair notes.** Hard links created by Linux `rsync` lack `kHFSHasLinkChainBit`; every lookup repairs the flag in memory and prints `hfs: set hardlink bit ...`. Patch `0104` limits those notes on FOGOS as SWEET already did.
+The port does **not** boot to a usable system yet. Known issues:
+
+1. **`SpringBoard` crash loop (blocking).** `launchd` reports `Process(N) crashed: SpringBoard. Too many corpses being created.` with no further on-device detail (no working crash reporter/syslog). Patch `0104` logs non-init exits (signal, status, code-signing flags, exit reason) to the serial/console for diagnosis.
+2. **`watchdogd` cannot start.** It requires the `watchdog_KICK` IOKit user client from Apple's closed watchdog kext (not present), so it dies/respawns until throttled by `launchd`.
+3. **HFS hard-link repair notes.** Hard links created by Linux `rsync` lack `kHFSHasLinkChainBit`; each lookup repairs the bit in memory and logs `hfs: set hardlink bit ...` (reduced for FOGOS by patch `0104`).
+4. **No display/touch/input/network/audio drivers** for FOGOS; framebuffer is console-only. Bring-up uses `cpus=1` and temporary `fastboot boot` only.
 
 ## Build and package
 
