@@ -4,7 +4,7 @@
 
 This project adapts XNU 8796 and the iPhone X iOS 16.6.1 userspace to the Moto G34. Some XNU work is based on [ios-sweet](https://github.com/dipa-studio/ios-sweet); the board support, ADT, UFS driver, and boot flow are adapted for `fogos`.
 
-> **Status: not working yet (experimental, 2026-11-04).** The kernel can boot from a temporary `fastboot boot` image and reach iOS userspace (`launchd` and core daemons start, AKS calls answered by stubs, `SpringBoard` spawned), but there is **no usable iOS UI**: `SpringBoard` crash-loops and the bring-up hits blocking errors. Only `userdata` is used for iOS; GPT, `boot`, `vendor_boot`, `recovery`, `modem`, `persist` and partition backups are left untouched.
+> **Status: not working yet (experimental, 2026-11-04).** The kernel can boot from a temporary `fastboot boot` image and reach iOS userspace (`launchd` and core daemons start, AKS calls answered by stubs, `SpringBoard` spawned), but there is **no usable iOS UI**: `SpringBoard` crash-loops and the bring-up hits blocking errors. Early bring-up wrote to `userdata`; for dual boot iOS should live on its **own dedicated GPT partition** (e.g. `ios`, selected with `ufsroot=ios`) so writes stay inside that partition. GPT/bootloader/`boot`/`vendor_boot`/`recovery`/`modem`/`persist` and backups must stay untouched. See [docs/DUALBOOT.md](docs/DUALBOOT.md).
 
 ## Port status
 
@@ -14,20 +14,21 @@ This project adapts XNU 8796 and the iPhone X iOS 16.6.1 userspace to the Moto G
 | Android shim | Temporary boot with `fastboot boot`; no kernel flashing required |
 | FOGOS ADT | Generated from Moto G34 board data |
 | UFS | Read-only by default; writes are opt-in with `fogos-rw=1` (bounce buffer, bounds re-check, `DKIOCISWRITABLE`) |
-| iOS root filesystem | 16-GiB non-journaled case-sensitive HFSX image on `userdata`, mounted read-write with `rd=ufsroot0 fogos-rw=1` |
+| iOS root filesystem | Non-journaled HFSX image on a GPT partition selected by `ufsroot=<name>` (dual-boot target: dedicated `ios`; bring-up used `userdata`). Read-only by default; `fogos-rw=1` enables writes to that partition only. |
 | Userspace | `launchd` and the boot daemons run; `SpringBoard` is spawned but crashes on launch |
 | AMFI / code signing | Built-in policy provider: signed binaries are platform binaries, unsealed root accepted |
 | Display, touch, networking, audio | Not implemented; the framebuffer is console-only |
 
-The boot arguments currently used for bring-up:
+The boot arguments currently used for bring-up (example: dedicated dual-boot partition):
 
 ```
-debug=0xc serial=3 cpus=1 keepsyms=1 rd=ufsroot0 unentitled_ios_sim_launch=1 fogos-rw=1
+debug=0xc serial=3 cpus=1 keepsyms=1 rd=ufsroot0 ufsroot=ios unentitled_ios_sim_launch=1 fogos-rw=1
 ```
 
-- `rd=ufsroot0` selects the read-only UFS block device (`userdata`, LUN 4) as the root.
+- `rd=ufsroot0` selects the UFS root block device exposed by XNU.
+- `ufsroot=<name>` selects the GPT partition by name (default historically `userdata`). For dual boot use a **dedicated `ios` partition** so iOS overwrites only its own data; do not target Android partitions.
 - `unentitled_ios_sim_launch=1` lets `launchd` spawn iOS binaries without the `com.apple.private.security.no-sandbox` entitlement.
-- `fogos-rw=1` clears `MNT_RDONLY` on the root mount and enables the UFS write path. Without it, first boot cannot create `/var/db/timezone/*` and `launchd` panics with `boot task failure: tzinit - exited due to exit(30)`.
+- `fogos-rw=1` clears `MNT_RDONLY` on the root mount and enables the UFS write path **for that selected partition** (opt-in; can mutate/corrupt it). Without it, first boot cannot create `/var/db/timezone/*` and `launchd` panics with `boot task failure: tzinit - exited due to exit(30)`. Use read-only/probe (`fogos-ufs-probe=1`) before enabling writes.
 
 ## Known errors / blockers (current)
 
@@ -49,12 +50,12 @@ gh workflow run xnu.yml --repo kitbodega/ios-fogos --ref main \
   -f machine_config=FOGOS -f kernel_config=DEVELOPMENT -f keep_going=true
 ```
 
-Package a boot image from a successful kernel build. Replace `KERNEL_RUN_ID` with that run's ID:
+Package a boot image from a successful kernel build. Replace `KERNEL_RUN_ID` with that run's ID (use `ufsroot=ios` for a dedicated dual-boot partition; omit `fogos-rw=1` for read-only/probe):
 
 ```sh
 gh workflow run xnu.yml --repo kitbodega/ios-fogos --ref main \
   -f shim_only=true -f kernel_run_id=KERNEL_RUN_ID \
-  -f 'boot_args=debug=0xc serial=3 cpus=1 keepsyms=1 rd=ufsroot0 unentitled_ios_sim_launch=1 fogos-rw=1'
+  -f 'boot_args=debug=0xc serial=3 cpus=1 keepsyms=1 rd=ufsroot0 ufsroot=ios unentitled_ios_sim_launch=1 fogos-rw=1'
 ```
 
 Download the `fogos-boot` artifact from the packaging run and boot it temporarily:
@@ -65,9 +66,13 @@ fastboot boot fogos-boot.img
 
 Every push to `main` also rebuilds the kernel, so a patch can be validated with a `shim_only` packaging run once the build finishes.
 
-## Installing iOS on `userdata` (destructive)
+## Dual boot (Android + iOS, separate partitions)
 
-> **Warning.** This replaces Android user data on `userdata`. All other partitions (boot, vendor_boot, system, recovery, modem, persist, GPT) are left untouched. Confirm each step; use temporary `fastboot boot` only.
+To **dual boot** and let iOS overwrite data only in its own partition, iOS must live on a **dedicated GPT partition** (e.g. `ios`) separate from Android’s `userdata`/system partitions, and be booted with `rd=ufsroot0 ufsroot=ios` (add `fogos-rw=1` only when intentionally writing that partition). A guacamole-style selector/chainload shim is the target for one-image selection but is **WIP/not implemented or verified on fogos** (no alert-slider trigger, SM6375 UFS/slot/memory differences). Details, layout, and safety rules: [docs/DUALBOOT.md](docs/DUALBOOT.md).
+
+## Installing iOS on `userdata` (destructive, single-partition/legacy)
+
+> **Warning.** This replaces Android user data on `userdata` (breaks Android data; not dual-boot-safe). Prefer a dedicated `ios` partition per [docs/DUALBOOT.md](docs/DUALBOOT.md). All other partitions (boot, vendor_boot, system, recovery, modem, persist, GPT) are left untouched. Confirm each step and keep backups; use temporary `fastboot boot` only.
 
 **Prerequisites (host/WSL):**
 - A successful FOGOS kernel build (run ID `KERNEL_RUN_ID`).
