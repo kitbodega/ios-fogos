@@ -48,6 +48,10 @@ permissions:
 
 jobs:
   fogos-shim:
+    # shim_only packages kernel_run_id; a kernel build packages the kernel it
+    # just built (never a stale default run).
+    needs: build
+    if: ${{ always() && (inputs.shim_only == true || needs.build.result == 'success') }}
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     env:
@@ -62,7 +66,7 @@ jobs:
         with:
           name: xnu-kernel
           repository: kitbodega/ios-fogos
-          run-id: ${{ inputs.kernel_run_id || '41405380749' }}
+          run-id: ${{ inputs.shim_only == true && (inputs.kernel_run_id || '41405380749') || github.run_id }}
           github-token: ${{ github.token }}
           path: research/fogos-ci/kernel
       - name: Create FOGOS ADT and payload

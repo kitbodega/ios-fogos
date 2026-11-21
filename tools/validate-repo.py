@@ -20,6 +20,28 @@ REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 def green(text): return f"\033[92m{text}\033[0m"
 def red(text): return f"\033[91m{text}\033[0m"
 def bold(text): return f"\033[1m{text}\033[0m"
+def yellow(text): return f"\033[93m{text}\033[0m"
+
+
+def find_bash():
+    """Return a bash that can actually run `bash -n`, or None.
+
+    On Windows, PATH's bash.exe is often the WSL launcher stub, which fails
+    (UTF-16 error text) when no distro is installed; prefer Git Bash there.
+    """
+    candidates = ['bash']
+    if os.name == 'nt':
+        for base in (os.environ.get('ProgramFiles', r'C:\Program Files'),
+                     os.environ.get('ProgramFiles(x86)', r'C:\Program Files (x86)')):
+            candidates.insert(0, os.path.join(base, 'Git', 'bin', 'bash.exe'))
+    for cand in candidates:
+        try:
+            res = subprocess.run([cand, '-c', 'exit 0'], capture_output=True)
+        except OSError:
+            continue
+        if res.returncode == 0:
+            return cand
+    return None
 
 
 def validate_patches(verbose=False):
@@ -107,9 +129,16 @@ def validate_shell_scripts(verbose=False):
     )
     errors = []
 
+    bash = find_bash()
+    if bash is None:
+        print(yellow("[!] Skipping shell syntax check: no working bash found "
+                     "(on Windows install Git for Windows or a WSL distro)"))
+        return True
+
     for path in sh_files:
         rel = os.path.relpath(path, REPO_ROOT)
-        res = subprocess.run(['bash', '-n', path], capture_output=True, text=True)
+        res = subprocess.run([bash, '-n', path], capture_output=True,
+                             text=True, encoding='utf-8', errors='replace')
         if res.returncode != 0:
             errors.append(f"{rel}: {res.stderr.strip()}")
         elif verbose:
